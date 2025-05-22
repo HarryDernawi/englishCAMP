@@ -345,9 +345,8 @@
             width: 100%;
             max-width: 700px; /* Smaller max-width for the slider */
             margin: 2rem auto;
-            overflow-x: hidden; /* Changed to hidden for JS control */
-            scroll-snap-type: x mandatory; /* Keep for potential fallback/styling */
-            scroll-behavior: smooth; /* Keep for smooth transitions */
+            overflow: hidden; /* Changed to hidden for JS control */
+            /* Removed scroll-snap-type and scroll-behavior as they are redundant with JS transform */
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -380,7 +379,7 @@
             text-align: center;
             white-space: normal;
             overflow-wrap: break-word;
-            scroll-snap-align: start;
+            /* Removed scroll-snap-align as it's redundant with JS transform */
         }
         /* Responsive adjustments for slide width - these are less critical with JS transform */
         @media (max-width: 700px) {
@@ -424,10 +423,10 @@
             transform: translateY(-50%) scale(1.1);
         }
         .prev-btn {
-            right: 10px;
+            right: 10px; /* For RTL, previous is on the right */
         }
         .next-btn {
-            left: 10px;
+            left: 10px; /* For RTL, next is on the left */
         }
         .slider-dots {
             display: flex;
@@ -710,8 +709,7 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        // Corrected: Reference __initial_auth_token directly
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -785,56 +783,113 @@
         const ADMIN_USERNAME = 'harry';
         const ADMIN_PASSWORD = '0000';
 
-        function showAdminModal() {
-            if (adminModalOverlay) {
-                adminModalOverlay.classList.add('show');
-                if (adminUsernameInput) adminUsernameInput.value = '';
-                if (adminPasswordInput) adminPasswordInput.value = '';
-                if (adminMessage) adminMessage.textContent = '';
+        // Function to apply settings (from Firestore or default)
+        function applySettings(settings) {
+            document.getElementById('schoolLogo').src = settings.logoUrl || defaultSettings.logoUrl;
+
+            if (settings.colors) {
+                document.documentElement.style.setProperty('--primary-light-blue', settings.colors.bodyBg);
+                document.documentElement.style.setProperty('--header-dark-blue', settings.colors.headerGradientStart);
+                document.documentElement.style.setProperty('--header-gradient-end', settings.colors.headerGradientEnd);
+                document.documentElement.style.setProperty('--accent-gold', settings.colors.featureIconColor); // Using accent-gold for feature icons
+                document.documentElement.style.setProperty('--cta-green-light', settings.colors.formSubmitButtonStart);
+                document.documentElement.style.setProperty('--cta-green-dark', settings.colors.formSubmitButtonEnd);
             }
-        }
 
-        function hideAdminModal() {
-            if (adminModalOverlay) {
-                adminModalOverlay.classList.remove('show');
-            }
-        }
+            if (settings.texts) {
+                document.getElementById('mainTitleText').textContent = settings.texts.mainTitle || '';
+                document.getElementById('campSloganText').textContent = settings.texts.campSlogan || '';
+                document.getElementById('registrationStatusText').textContent = settings.texts.registrationStatus || '';
+                document.getElementById('programIntroText').textContent = settings.texts.programIntro || '';
+                document.getElementById('programHeadingText').textContent = settings.texts.programHeading || '';
+                document.getElementById('educationalHoursHeadingText').textContent = settings.texts.educationalHoursHeading || '';
+                document.getElementById('recreationalHoursHeadingText').textContent = settings.texts.recreationalHoursHeading || '';
+                document.getElementById('methodologyHeadingText').textContent = settings.texts.methodologyHeading || '';
+                document.getElementById('methodologyDescriptionText').textContent = settings.texts.methodologyDescriptionText || '';
+                document.getElementById('durationTextContent').textContent = settings.texts.durationTextContent || '';
+                document.getElementById('datesTextContent').textContent = settings.texts.datesTextContent || '';
+                document.getElementById('locationTextContent').textContent = settings.texts.locationTextContent || '';
+                document.getElementById('contactPhoneDisplay').textContent = settings.texts.contactPhoneDisplay || '';
+                document.getElementById('ourGoalHeadingText').textContent = settings.texts.ourGoalHeadingText || '';
+                document.getElementById('ourGoalDescriptionText').textContent = settings.texts.ourGoalDescriptionText || '';
+                document.getElementById('limitedSeatsTextContent').textContent = settings.texts.limitedSeatsTextContent || '';
+                document.getElementById('bottomContactInfoText').textContent = settings.texts.bottomContactInfoText || '';
+                document.getElementById('bottomPhoneTextContent').textContent = settings.texts.bottomPhoneTextContent || '';
+                document.getElementById('hashtagsTextContent').textContent = settings.texts.hashtagsTextContent || '';
 
-        function handleAdminLogin() {
-            const username = adminUsernameInput ? adminUsernameInput.value : '';
-            const password = adminPasswordInput ? adminPasswordInput.value : '';
-
-            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-                if (adminMessage) {
-                    adminMessage.textContent = 'تم تسجيل الدخول بنجاح! (هنا ستكون لوحة التحكم)';
-                    adminMessage.style.color = 'green';
+                window.sliderPhrases = settings.texts.sliderPhrases || defaultSettings.texts.sliderPhrases;
+                if (slidesWrapper) { // Ensure slidesWrapper is available before rendering
+                    renderSlides();
                 }
-                setTimeout(hideAdminModal, 1500);
-            } else {
-                if (adminMessage) {
-                    adminMessage.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
-                    adminMessage.style.color = 'red';
-                }
             }
         }
 
-        // Add event listeners for admin modal
-        if (adminButton) adminButton.addEventListener('click', showAdminModal);
-        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminLogin);
-        if (adminCancelBtn) adminCancelBtn.addEventListener('click', hideAdminModal);
-        // Close modal if clicking outside content
-        if (adminModalOverlay) {
-            adminModalOverlay.addEventListener('click', (e) => {
-                if (e.target === adminModalOverlay) {
-                    hideAdminModal();
+        // Function to load admin settings from Firestore
+        function loadAdminSettings() {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    onSnapshot(adminSettingsDocRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const settings = docSnap.data();
+                            console.log("Admin settings loaded:", settings);
+                            applySettings(settings);
+                        } else {
+                            console.log("No admin settings found, using default.");
+                            applySettings(defaultSettings);
+                        }
+                    }, (error) => {
+                        console.error("Error listening to admin settings:", error);
+                        // showModal("حدث خطأ أثناء تحميل الإعدادات. قد لا يتم عرض الموقع بشكل صحيح."); // Not using modal here to avoid conflict
+                    });
+                } else {
+                    console.log("Not authenticated, loading default settings.");
+                    applySettings(defaultSettings);
                 }
             });
         }
 
+        // Function to render slides and dots
+        function renderSlides() {
+            if (!slidesWrapper || !sliderDots) {
+                console.error("Slider elements not found. Cannot render slides.");
+                return;
+            }
+            slidesWrapper.innerHTML = '';
+            sliderDots.innerHTML = '';
+            const phrasesToRender = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases : [];
 
-        function updateDots() {
-            if (!dots || dots.length === 0) return;
-            dots.forEach((dot, i) => {
+            phrasesToRender.forEach((phrase, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.classList.add('slide', slideStyles[index % slideStyles.length]); // Apply styles
+                slideDiv.textContent = phrase;
+                slidesWrapper.appendChild(slideDiv);
+
+                const dotSpan = document.createElement('span');
+                dotSpan.classList.add('dot');
+                dotSpan.addEventListener('click', () => showSlide(index));
+                sliderDots.appendChild(dotSpan);
+            });
+            slides = slidesWrapper.children; // Assign the actual HTMLCollection to 'slides'
+            showSlide(currentSlideIndex);
+        }
+
+        // Function to show a specific slide
+        function showSlide(index) {
+            const phrasesLength = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases.length : 0;
+            if (phrasesLength === 0 || !slidesWrapper) return;
+
+            if (index >= phrasesLength) {
+                currentSlideIndex = 0;
+            } else if (index < 0) {
+                currentSlideIndex = phrasesLength - 1;
+            } else {
+                currentSlideIndex = index;
+            }
+
+            slidesWrapper.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+
+            const dotsElements = document.querySelectorAll('.slider-dots .dot'); // Get dots every time to ensure they are current
+            dotsElements.forEach((dot, i) => {
                 if (i === currentSlideIndex) {
                     dot.classList.add('active');
                 } else {
@@ -843,244 +898,80 @@
             });
         }
 
-        function scrollToSlide(index) {
-            // Ensure slider elements are available before attempting to scroll
-            if (!slidesWrapper || !slides || slides.length === 0 || !sliderContainer) {
-                console.warn("Slider elements not ready for scroll. Skipping scrollToSlide.");
-                return;
-            }
-
-            if (index >= slides.length) {
-                currentSlideIndex = 0;
-            } else if (index < 0) {
-                currentSlideIndex = slides.length - 1;
-            } else {
-                currentSlideIndex = index;
-            }
-
-            // Use transform for smooth sliding
-            slidesWrapper.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
-            updateDots();
-        }
-
+        // Event listeners for slider navigation
         function nextSlide() {
-            scrollToSlide(currentSlideIndex + 1);
+            showSlide(currentSlideIndex + 1);
         }
 
         function prevSlide() {
-            scrollToSlide(currentSlideIndex - 1);
+            showSlide(currentSlideIndex - 1);
         }
 
-        function startAutoSlide() {
+        // Start and stop slider functions
+        function startSlider() {
+            stopSlider();
+            slideInterval = setInterval(nextSlide, 5000);
+        }
+
+        function stopSlider() {
             clearInterval(slideInterval);
-            slideInterval = setInterval(nextSlide, 3000);
         }
 
-        function stopAutoSlide() {
-            clearInterval(slideInterval);
-        }
-
-        function renderSlides() {
-            console.log('renderSlides called. window.sliderPhrases:', window.sliderPhrases);
-            const sliderSlidesElement = document.getElementById('sliderSlides');
-            const sliderDotsElement = document.getElementById('sliderDots');
-            console.log('sliderSlidesElement:', sliderSlidesElement);
-            console.log('sliderDotsElement:', sliderDotsElement);
-
-            if (!sliderSlidesElement || !sliderDotsElement) {
-                console.error('Slider elements not found. Cannot render slides.');
-                return;
-            }
-
-            sliderSlidesElement.innerHTML = ''; // Clear existing slides
-            sliderDotsElement.innerHTML = '';   // Clear existing dots
-
-            const phrasesToRender = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases : [];
-
-            if (phrasesToRender.length === 0) {
-                const slideDiv = document.createElement('div');
-                slideDiv.classList.add('slide');
-                slideDiv.textContent = "لا توجد جمل لعرضها";
-                sliderSlidesElement.appendChild(slideDiv);
-                stopAutoSlide();
-                console.log('No phrases to render, displaying default message.');
-                return;
-            }
-
-            phrasesToRender.forEach((phrase, index) => {
-                const slideDiv = document.createElement('div');
-                slideDiv.classList.add('slide');
-                slideDiv.classList.add(slideStyles[index % slideStyles.length]); // Apply rotating styles
-                slideDiv.textContent = phrase; 
-                sliderSlidesElement.appendChild(slideDiv);
-
-                const dotSpan = document.createElement('span');
-                dotSpan.classList.add('dot');
-                dotSpan.dataset.slideIndex = index;
-                dotSpan.addEventListener('click', () => {
-                    scrollToSlide(index);
-                    startAutoSlide(); // Restart auto-slide on manual interaction
-                });
-                sliderDotsElement.appendChild(dotSpan);
-            });
-
-            // Re-query slides and dots after populating content
-            slides = document.querySelectorAll('.slides .slide');
-            dots = document.querySelectorAll('.slider-dots .dot');
-
-            // Add event listeners for navigation buttons, only if elements exist
-            const nextBtn = document.getElementById('nextBtn');
-            const prevBtn = document.getElementById('prevBtn');
-
-            if (nextBtn) {
-                nextBtn.onclick = () => { // Use onclick to easily overwrite previous listeners
-                    nextSlide();
-                    startAutoSlide();
-                };
-            }
-            if (prevBtn) {
-                prevBtn.onclick = () => { // Use onclick to easily overwrite previous listeners
-                    prevSlide();
-                    startAutoSlide();
-                };
-            }
-
-            // Pause auto-slide on hover, resume on mouse leave
-            if (sliderContainer) {
-                sliderContainer.onmouseenter = stopAutoSlide;
-                sliderContainer.onmouseleave = startAutoSlide;
-            }
-
-            // No need for onscroll listener when using translateX for primary control
-            // sliderContainer.onscroll = () => { ... };
-
-            scrollToSlide(currentSlideIndex); // Show initial slide
-            startAutoSlide(); // Start slider after rendering
-        }
-
-
-        function applySettings(settings) {
-            // Ensure settings and settings.texts are defined
-            if (!settings || !settings.texts) {
-                console.error("Settings or settings.texts is undefined. Cannot apply text content.");
-                return; // Exit if settings are not valid
-            }
-
-            // Apply colors to CSS variables
-            document.documentElement.style.setProperty('--primary-light-blue', '#E0F2F7');
-            document.documentElement.style.setProperty('--secondary-off-white', '#FDFDFD');
-            document.documentElement.style.setProperty('--accent-gold', settings.colors.featureIconColor);
-            document.documentElement.style.setProperty('--text-dark', '#334155');
-            document.documentElement.style.setProperty('--header-dark-blue', settings.colors.headerGradientStart);
-            document.documentElement.style.setProperty('--cta-green-light', settings.colors.formSubmitButtonStart);
-            document.documentElement.style.setProperty('--cta-green-dark', settings.colors.formSubmitButtonEnd);
-
-            // Define elements to update and their corresponding settings values
-            const elementsToUpdate = [
-                { id: 'schoolLogo', prop: 'src', value: settings.logoUrl },
-                { id: 'mainTitleText', prop: 'textContent', value: settings.texts.mainTitle },
-                { id: 'campSloganText', prop: 'textContent', value: settings.texts.campSlogan },
-                { id: 'registrationStatusText', prop: 'textContent', value: settings.texts.registrationStatus },
-                { id: 'programIntroText', prop: 'textContent', value: settings.texts.programIntro },
-                { id: 'programHeadingText', prop: 'textContent', value: settings.texts.programHeading },
-                { id: 'educationalHoursHeadingText', prop: 'textContent', value: settings.texts.educationalHoursHeading },
-                { id: 'recreationalHoursHeadingText', prop: 'textContent', value: settings.texts.recreationalHoursHeading },
-                { id: 'methodologyHeadingText', prop: 'textContent', value: settings.texts.methodologyHeading },
-                { id: 'methodologyDescriptionText', prop: 'textContent', value: settings.texts.methodologyDescriptionText },
-                { id: 'durationTextContent', prop: 'textContent', value: settings.texts.durationTextContent },
-                { id: 'datesTextContent', prop: 'textContent', value: settings.texts.datesTextContent },
-                { id: 'locationTextContent', prop: 'textContent', value: settings.texts.locationTextContent },
-                { id: 'contactPhoneDisplay', prop: 'textContent', value: settings.texts.contactPhoneDisplay },
-                { id: 'ourGoalHeadingText', prop: 'textContent', value: settings.texts.ourGoalHeadingText },
-                { id: 'ourGoalDescriptionText', prop: 'textContent', value: settings.texts.ourGoalDescriptionText },
-                { id: 'limitedSeatsTextContent', prop: 'textContent', value: settings.texts.limitedSeatsTextContent },
-                { id: 'bottomContactInfoText', prop: 'textContent', value: settings.texts.bottomContactInfoText },
-                { id: 'bottomPhoneTextContent', prop: 'textContent', value: settings.texts.bottomPhoneTextContent },
-                { id: 'hashtagsTextContent', prop: 'textContent', value: settings.texts.hashtagsTextContent }
-            ];
-
-            // Loop through elements and update them, with null checks
-            elementsToUpdate.forEach(item => {
-                const element = document.getElementById(item.id);
-                if (element) {
-                    const value = item.value !== undefined ? item.value : '';
-                    if (item.prop === 'src') {
-                        element.src = value;
-                    } else {
-                        element.textContent = value;
-                    }
-                } else {
-                    console.warn(`Element with ID '${item.id}' not found. Cannot set ${item.prop}.`);
-                }
-            });
-
-            // Update global slider phrases variable
-            window.sliderPhrases = settings.texts.sliderPhrases && Array.isArray(settings.texts.sliderPhrases) ? settings.texts.sliderPhrases : defaultSettings.texts.sliderPhrases;
-            
-            // Re-render slides based on the updated global variable
-            renderSlides();
-        }
-
-        // Fetch settings from Firestore
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log("User authenticated:", user.uid);
-                try {
-                    const docSnap = await getDoc(adminSettingsDocRef);
-                    if (docSnap.exists()) {
-                        const settings = docSnap.data();
-                        console.log("Admin settings loaded:", settings);
-                        applySettings(settings);
-                    } else {
-                        console.log("No admin settings found, using default.");
-                        applySettings(defaultSettings);
-                    }
-                } catch (error) {
-                    console.error("Error fetching admin settings:", error);
-                    applySettings(defaultSettings); // Fallback to default on error
-                }
-            } else {
-                console.log("No user authenticated, signing in anonymously.");
-                try {
-                    await signInAnonymously(auth);
-                    // onAuthStateChanged will be triggered again with the anonymous user
-                } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                    applySettings(defaultSettings); // Fallback to default on error
-                }
-            }
-        });
-
-        // Start slider on page load with default settings (will be overwritten by Firestore if available)
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initialize global slider elements once DOM is ready
+        // Main initialization on window load
+        window.onload = function() {
+            // Assign DOM elements to global variables here
             sliderContainer = document.getElementById('sliderContainer');
             slidesWrapper = document.getElementById('sliderSlides');
+            prevBtn = document.getElementById('prevBtn');
+            nextBtn = document.getElementById('nextBtn');
+            sliderDots = document.getElementById('sliderDots');
 
-            // Initial call to apply default settings, which will also render the slider
-            applySettings(defaultSettings); 
-            // Setup intersection observer for scroll reveal animations
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                        entry.target.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
-                        observer.unobserve(entry.target); // Stop observing once animated
-                    }
-                });
-            }, { threshold: 0.1 }); // Trigger when 10% of the element is visible
+            // Attach event listeners for slider navigation buttons
+            if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+            if (nextBtn) nextBtn.addEventListener('click', nextSlide);
 
-            document.querySelectorAll('.section-container').forEach(section => {
-                observer.observe(section);
-            });
+            // Pause slider on hover
+            if (slidesWrapper) {
+                slidesWrapper.addEventListener('mouseenter', stopSlider);
+                slidesWrapper.addEventListener('mouseleave', startSlider);
+            }
+
+            // Initial load of admin settings which will trigger renderSlides and startSlider
+            loadAdminSettings();
+            startSlider(); // Start the slider after loading settings/rendering slides
+        };
+
+        // Admin button and modal logic
+        adminButton.addEventListener('click', () => {
+            adminModalOverlay.classList.add('show');
         });
 
-        // Listen for messages from parent window (dashboard)
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'updatePreviewSettings') {
-                const settings = event.data.settings;
-                applySettings(settings);
+        adminCancelBtn.addEventListener('click', () => {
+            adminModalOverlay.classList.remove('show');
+            adminMessage.textContent = ''; // Clear any previous messages
+            adminUsernameInput.value = '';
+            adminPasswordInput.value = '';
+        });
+
+        adminLoginBtn.addEventListener('click', () => {
+            const username = adminUsernameInput.value;
+            const password = adminPasswordInput.value;
+
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                adminModalOverlay.classList.remove('show');
+                window.location.href = 'dashboard.html'; // Redirect to dashboard
+            } else {
+                adminMessage.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+            }
+        });
+
+        // Listener for clicks outside the modal to close it
+        adminModalOverlay.addEventListener('click', (e) => {
+            if (e.target === adminModalOverlay) {
+                adminModalOverlay.classList.remove('show');
+                adminMessage.textContent = '';
+                adminUsernameInput.value = '';
+                adminPasswordInput.value = '';
             }
         });
     </script>
