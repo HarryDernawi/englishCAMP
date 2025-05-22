@@ -6,6 +6,7 @@
     <title>إعلان مخيم اللغة الإنجليزية الفاخر</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Modern & Luxurious Color Palette (Lighter Version) */
         :root {
@@ -137,6 +138,9 @@
             font-weight: 600;
             margin-bottom: 1.5rem;
             color: var(--text-dark);
+        }
+        #campSloganText { /* Specific style for the slogan text */
+            margin-top: 8rem; /* Increased top margin to push it down further */
         }
         .hero-content .camp-status {
             font-size: 1.2rem;
@@ -286,7 +290,7 @@
 
         /* Call to Action Button */
         .cta-button {
-            background-color: rgba(255,255,255,0.1); /* Changed to match header hover color */
+            background-color: var(--accent-gold); /* Changed to gold */
             color: var(--header-dark-blue); /* Changed text color for visibility */
             border: 1px solid var(--header-dark-blue); /* Added border for definition */
             padding: 1.2rem 3rem;
@@ -300,7 +304,8 @@
             text-decoration: none;
         }
         .cta-button:hover {
-            background-color: rgba(255,255,255,0.2); /* Slightly darker on hover */
+            background-color: var(--header-dark-blue); /* Dark blue on hover */
+            color: white; /* White text on hover */
             transform: translateY(-5px) scale(1.02);
             box-shadow: 0 8px 15px var(--shadow-strong);
             border-color: var(--header-dark-blue); /* Keep border color consistent */
@@ -330,67 +335,99 @@
             color: white;
         }
 
-        /* --- Slider Design 5: Card-based Slider (Integrated) --- */
+        /* --- Slider Design --- */
         .slider-container {
-            background-color: var(--secondary-off-white); /* Lighter background for container */
-            padding: 1rem; /* Padding to show card separation */
+            background-color: var(--secondary-off-white);
+            padding: 1rem;
             border-radius: 1.5rem;
             box-shadow: 0 10px 20px var(--shadow-medium);
-            position: relative; /* Ensure positioning for buttons */
+            position: relative;
             width: 100%;
-            max-width: 900px; /* Increased max-width */
+            max-width: 700px; /* Smaller max-width for the slider */
             margin: 2rem auto;
-            overflow: hidden;
+            overflow-x: hidden; /* Changed to hidden for JS control */
+            scroll-snap-type: x mandatory; /* Keep for potential fallback/styling */
+            scroll-behavior: smooth; /* Keep for smooth transitions */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
-        .slides { /* This was slides-wrapper in showcase, now it's 'slides' */
+        .slider-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slides {
             display: flex;
             transition: transform 0.5s ease-in-out;
-            gap: 1rem; /* Gap between cards */
+            width: 100%; /* Ensure it takes full width for transform */
+            height: 220px; /* Fixed height for slides container */
         }
         .slide {
-            min-width: 100%; /* Changed to 100% to simplify calculation */
+            flex-shrink: 0;
+            width: 100%; /* Each slide takes 100% of slides container width */
             box-sizing: border-box;
-            background-color: var(--card-bg); /* Individual card background */
+            background-color: var(--primary-light-blue); /* Changed to primary-light-blue for cards */
             color: var(--text-dark);
-            font-size: 1.6rem; /* Increased font size */
+            font-size: 1.4rem; /* Slightly smaller font size for slides */
             font-weight: 500;
             border-radius: 1rem;
-            box-shadow: 0 5px 10px var(--shadow-light); /* Individual card shadow */
-            transition: transform 0.5s ease-in-out, box-shadow 0.3s ease;
-            height: 270px; /* Increased height */
+            box-shadow: 0 5px 10px var(--shadow-light);
+            height: 100%; /* Take full height of slides container */
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem; /* Padding inside the slide card */
-            text-align: center; /* Center text within the card */
-            white-space: normal; /* Ensure text wraps */
-            overflow-wrap: break-word; /* Break long words */
+            padding: 1rem;
+            text-align: center;
+            white-space: normal;
+            overflow-wrap: break-word;
+            scroll-snap-align: start;
         }
+        /* Responsive adjustments for slide width - these are less critical with JS transform */
+        @media (max-width: 700px) {
+            .slide {
+                /* width: calc(100vw - 4rem); */ /* Not needed with JS transform */
+            }
+        }
+        @media (max-width: 640px) {
+            .slide {
+                /* width: calc(100vw - 2rem); */ /* Not needed with JS transform */
+            }
+        }
+
+        /* Slide text variations */
+        .slide.style-1 { font-weight: 600; color: var(--header-dark-blue); }
+        .slide.style-2 { font-style: italic; font-size: 1.5rem; }
+        .slide.style-3 { /* Removed text-shadow */ }
+        .slide.style-4 { font-weight: 700; }
+        .slide.style-5 { font-size: 1.3rem; }
+        .slide.style-6 { color: #556270; } /* A slightly different shade of dark grey */
+
+
         .slider-nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background-color: rgba(0,0,0,0.02); /* Very very transparent */
+            background-color: rgba(0,0,0,0.02);
             color: var(--header-dark-blue);
-            border: none; /* No border */
-            border-radius: 50%; /* Circular shape */
-            padding: 0.2rem 0.15rem; /* Even smaller padding */
+            border: none;
+            border-radius: 50%;
+            padding: 0.2rem 0.15rem;
             cursor: pointer;
             z-index: 10;
-            font-size: 0.8rem; /* Much smaller font size */
+            font-size: 0.8rem;
             transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: none; /* No box shadow */
+            box-shadow: none;
         }
         .slider-nav-btn:hover {
-            background-color: rgba(0,0,0,0.05); /* Slightly less transparent on hover */
+            background-color: rgba(0,0,0,0.05);
             color: var(--header-dark-blue);
-            transform: translateY(-50%) scale(1.1); /* Slight scale on hover */
+            transform: translateY(-50%) scale(1.1);
         }
         .prev-btn {
-            right: 10px; /* Adjust as needed for padding */
+            right: 10px;
         }
         .next-btn {
-            left: 10px; /* Adjust as needed for padding */
+            left: 10px;
         }
         .slider-dots {
             display: flex;
@@ -409,14 +446,14 @@
             border: 1px solid #9CA3AF;
         }
         .dot.active {
-            background-color: var(--cta-green-light);
-            border-color: white;
+            background-color: var(--accent-gold); /* Active dot color is now gold */
+            border-color: var(--header-dark-blue); /* Border for active dot */
             transform: scale(1.2);
         }
 
         /* Testimonial Section */
         .testimonial-card {
-            background-color: var(--primary-light-blue); /* Lighter testimonial card */
+            background-color: var(--primary-light-blue);
             border-radius: 1rem;
             padding: 2rem;
             box-shadow: 0 8px 15px var(--shadow-light);
@@ -449,6 +486,101 @@
                 transform: translateY(0);
             }
         }
+
+        /* Admin Button */
+        .admin-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(44, 95, 138, 0.1); /* Semi-transparent header dark blue */
+            color: var(--header-dark-blue);
+            border: 1px solid rgba(44, 95, 138, 0.3);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            z-index: 1000;
+        }
+        .admin-button:hover {
+            background-color: rgba(44, 95, 138, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Admin Modal */
+        .admin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .admin-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .admin-modal-content {
+            background-color: var(--secondary-off-white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .admin-modal-overlay.show .admin-modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .admin-modal-content h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--header-dark-blue);
+        }
+        .admin-modal-content input {
+            width: calc(100% - 2rem);
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            text-align: right; /* RTL support */
+        }
+        .admin-modal-content button {
+            background-color: var(--header-dark-blue);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin: 0 0.5rem;
+        }
+        .admin-modal-content button:hover {
+            background-color: var(--accent-gold);
+            color: var(--header-dark-blue);
+        }
+        .admin-modal-message {
+            margin-top: 1rem;
+            font-weight: 600;
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -474,7 +606,7 @@
         </div>
     </section>
 
-    <div class="slider-container">
+    <div class="slider-container" id="sliderContainer">
         <div class="slides" id="sliderSlides">
             </div>
         <button class="slider-nav-btn prev-btn" id="prevBtn">❮</button>
@@ -547,7 +679,7 @@
 
     <section class="section-container text-center">
         <h2 class="text-3xl font-bold text-gray-800 mb-6">لا تفوت الفرصة!</h2>
-        <a href="register.html" class="cta-button">سجل طفلك الآن!</a>
+        <a href="register.html" class="cta-button">سجل الآن!</a>
     </section>
 
     <footer class="footer-info">
@@ -556,6 +688,21 @@
         <p id="hashtagsTextContent">#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp</p>
     </footer>
 
+    <button class="admin-button" id="adminButton">
+        <i class="fas fa-cog"></i>
+    </button>
+
+    <div class="admin-modal-overlay" id="adminModalOverlay">
+        <div class="admin-modal-content">
+            <h3>تسجيل الدخول للوحة التحكم</h3>
+            <input type="text" id="adminUsername" placeholder="اسم المستخدم">
+            <input type="password" id="adminPassword" placeholder="كلمة المرور">
+            <p class="admin-modal-message" id="adminMessage"></p>
+            <button id="adminLoginBtn">دخول</button>
+            <button id="adminCancelBtn">إلغاء</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -563,6 +710,7 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Corrected: Reference __initial_auth_token directly
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
         const app = initializeApp(firebaseConfig);
@@ -584,7 +732,6 @@
             texts: {
                 mainTitle: "الـ English مش لازم يكون عقدة ! 🎯",
                 campSlogan: "تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!",
-                campName: "مخيم اللغة الإنجليزية",
                 registrationStatus: "الدورة الثانية - تسجيل مفتوح الآن!",
                 programIntro: "بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.",
                 programHeading: "برنامج يومي متوازن ومصمّم بعناية:",
@@ -613,33 +760,80 @@
             }
         };
 
+        // Global variables for slider elements
         let currentSlideIndex = 0;
         let slideInterval;
+        let sliderContainer;
+        let slidesWrapper;
+        let slides; // Will be updated in renderSlides
+        let dots;   // Will be updated in renderSlides
 
-        function showSlide(index) {
-            const slides = document.querySelectorAll('.slides .slide');
-            const dots = document.querySelectorAll('.slider-dots .dot');
-            if (slides.length === 0) return;
+        // Global variable for slider phrases and styles
+        window.sliderPhrases = defaultSettings.texts.sliderPhrases;
+        const slideStyles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5', 'style-6'];
 
-            if (index >= slides.length) {
-                currentSlideIndex = 0;
-            } else if (index < 0) {
-                currentSlideIndex = slides.length - 1;
-            } else {
-                currentSlideIndex = index;
+        // Admin Modal elements
+        const adminButton = document.getElementById('adminButton');
+        const adminModalOverlay = document.getElementById('adminModalOverlay');
+        const adminUsernameInput = document.getElementById('adminUsername');
+        const adminPasswordInput = document.getElementById('adminPassword');
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminCancelBtn = document.getElementById('adminCancelBtn');
+        const adminMessage = document.getElementById('adminMessage');
+
+        // Admin credentials
+        const ADMIN_USERNAME = 'harry';
+        const ADMIN_PASSWORD = '0000';
+
+        function showAdminModal() {
+            if (adminModalOverlay) {
+                adminModalOverlay.classList.add('show');
+                if (adminUsernameInput) adminUsernameInput.value = '';
+                if (adminPasswordInput) adminPasswordInput.value = '';
+                if (adminMessage) adminMessage.textContent = '';
             }
+        }
 
-            // Calculate offset based on currentSlideIndex and slide width (including gap)
-            const slidesContainer = document.querySelector('.slides');
-            const gapStyle = window.getComputedStyle(slidesContainer).getPropertyValue('gap');
-            const gapInPx = parseFloat(gapStyle); 
-            
-            const slideWidth = slides[0].offsetWidth; 
-            
-            const offset = -currentSlideIndex * (slideWidth + gapInPx); 
-            document.querySelector('.slides').style.transform = `translateX(${offset}px)`;
+        function hideAdminModal() {
+            if (adminModalOverlay) {
+                adminModalOverlay.classList.remove('show');
+            }
+        }
+
+        function handleAdminLogin() {
+            const username = adminUsernameInput ? adminUsernameInput.value : '';
+            const password = adminPasswordInput ? adminPasswordInput.value : '';
+
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                if (adminMessage) {
+                    adminMessage.textContent = 'تم تسجيل الدخول بنجاح! (هنا ستكون لوحة التحكم)';
+                    adminMessage.style.color = 'green';
+                }
+                setTimeout(hideAdminModal, 1500);
+            } else {
+                if (adminMessage) {
+                    adminMessage.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+                    adminMessage.style.color = 'red';
+                }
+            }
+        }
+
+        // Add event listeners for admin modal
+        if (adminButton) adminButton.addEventListener('click', showAdminModal);
+        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleAdminLogin);
+        if (adminCancelBtn) adminCancelBtn.addEventListener('click', hideAdminModal);
+        // Close modal if clicking outside content
+        if (adminModalOverlay) {
+            adminModalOverlay.addEventListener('click', (e) => {
+                if (e.target === adminModalOverlay) {
+                    hideAdminModal();
+                }
+            });
+        }
 
 
+        function updateDots() {
+            if (!dots || dots.length === 0) return;
             dots.forEach((dot, i) => {
                 if (i === currentSlideIndex) {
                     dot.classList.add('active');
@@ -649,21 +843,130 @@
             });
         }
 
+        function scrollToSlide(index) {
+            // Ensure slider elements are available before attempting to scroll
+            if (!slidesWrapper || !slides || slides.length === 0 || !sliderContainer) {
+                console.warn("Slider elements not ready for scroll. Skipping scrollToSlide.");
+                return;
+            }
+
+            if (index >= slides.length) {
+                currentSlideIndex = 0;
+            } else if (index < 0) {
+                currentSlideIndex = slides.length - 1;
+            } else {
+                currentSlideIndex = index;
+            }
+
+            // Use transform for smooth sliding
+            slidesWrapper.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+            updateDots();
+        }
+
         function nextSlide() {
-            showSlide(currentSlideIndex + 1);
+            scrollToSlide(currentSlideIndex + 1);
         }
 
         function prevSlide() {
-            showSlide(currentSlideIndex - 1);
+            scrollToSlide(currentSlideIndex - 1);
         }
 
-        function startSlider() {
-            clearInterval(slideInterval); // Clear any existing interval
-            slideInterval = setInterval(nextSlide, 3000); // Change slide every 3 seconds
+        function startAutoSlide() {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(nextSlide, 3000);
         }
+
+        function stopAutoSlide() {
+            clearInterval(slideInterval);
+        }
+
+        function renderSlides() {
+            console.log('renderSlides called. window.sliderPhrases:', window.sliderPhrases);
+            const sliderSlidesElement = document.getElementById('sliderSlides');
+            const sliderDotsElement = document.getElementById('sliderDots');
+            console.log('sliderSlidesElement:', sliderSlidesElement);
+            console.log('sliderDotsElement:', sliderDotsElement);
+
+            if (!sliderSlidesElement || !sliderDotsElement) {
+                console.error('Slider elements not found. Cannot render slides.');
+                return;
+            }
+
+            sliderSlidesElement.innerHTML = ''; // Clear existing slides
+            sliderDotsElement.innerHTML = '';   // Clear existing dots
+
+            const phrasesToRender = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases : [];
+
+            if (phrasesToRender.length === 0) {
+                const slideDiv = document.createElement('div');
+                slideDiv.classList.add('slide');
+                slideDiv.textContent = "لا توجد جمل لعرضها";
+                sliderSlidesElement.appendChild(slideDiv);
+                stopAutoSlide();
+                console.log('No phrases to render, displaying default message.');
+                return;
+            }
+
+            phrasesToRender.forEach((phrase, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.classList.add('slide');
+                slideDiv.classList.add(slideStyles[index % slideStyles.length]); // Apply rotating styles
+                slideDiv.textContent = phrase; 
+                sliderSlidesElement.appendChild(slideDiv);
+
+                const dotSpan = document.createElement('span');
+                dotSpan.classList.add('dot');
+                dotSpan.dataset.slideIndex = index;
+                dotSpan.addEventListener('click', () => {
+                    scrollToSlide(index);
+                    startAutoSlide(); // Restart auto-slide on manual interaction
+                });
+                sliderDotsElement.appendChild(dotSpan);
+            });
+
+            // Re-query slides and dots after populating content
+            slides = document.querySelectorAll('.slides .slide');
+            dots = document.querySelectorAll('.slider-dots .dot');
+
+            // Add event listeners for navigation buttons, only if elements exist
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+
+            if (nextBtn) {
+                nextBtn.onclick = () => { // Use onclick to easily overwrite previous listeners
+                    nextSlide();
+                    startAutoSlide();
+                };
+            }
+            if (prevBtn) {
+                prevBtn.onclick = () => { // Use onclick to easily overwrite previous listeners
+                    prevSlide();
+                    startAutoSlide();
+                };
+            }
+
+            // Pause auto-slide on hover, resume on mouse leave
+            if (sliderContainer) {
+                sliderContainer.onmouseenter = stopAutoSlide;
+                sliderContainer.onmouseleave = startAutoSlide;
+            }
+
+            // No need for onscroll listener when using translateX for primary control
+            // sliderContainer.onscroll = () => { ... };
+
+            scrollToSlide(currentSlideIndex); // Show initial slide
+            startAutoSlide(); // Start slider after rendering
+        }
+
 
         function applySettings(settings) {
-            // Apply colors to CSS variables based on the new lighter palette
+            // Ensure settings and settings.texts are defined
+            if (!settings || !settings.texts) {
+                console.error("Settings or settings.texts is undefined. Cannot apply text content.");
+                return; // Exit if settings are not valid
+            }
+
+            // Apply colors to CSS variables
             document.documentElement.style.setProperty('--primary-light-blue', '#E0F2F7');
             document.documentElement.style.setProperty('--secondary-off-white', '#FDFDFD');
             document.documentElement.style.setProperty('--accent-gold', settings.colors.featureIconColor);
@@ -672,59 +975,50 @@
             document.documentElement.style.setProperty('--cta-green-light', settings.colors.formSubmitButtonStart);
             document.documentElement.style.setProperty('--cta-green-dark', settings.colors.formSubmitButtonEnd);
 
+            // Define elements to update and their corresponding settings values
+            const elementsToUpdate = [
+                { id: 'schoolLogo', prop: 'src', value: settings.logoUrl },
+                { id: 'mainTitleText', prop: 'textContent', value: settings.texts.mainTitle },
+                { id: 'campSloganText', prop: 'textContent', value: settings.texts.campSlogan },
+                { id: 'registrationStatusText', prop: 'textContent', value: settings.texts.registrationStatus },
+                { id: 'programIntroText', prop: 'textContent', value: settings.texts.programIntro },
+                { id: 'programHeadingText', prop: 'textContent', value: settings.texts.programHeading },
+                { id: 'educationalHoursHeadingText', prop: 'textContent', value: settings.texts.educationalHoursHeading },
+                { id: 'recreationalHoursHeadingText', prop: 'textContent', value: settings.texts.recreationalHoursHeading },
+                { id: 'methodologyHeadingText', prop: 'textContent', value: settings.texts.methodologyHeading },
+                { id: 'methodologyDescriptionText', prop: 'textContent', value: settings.texts.methodologyDescriptionText },
+                { id: 'durationTextContent', prop: 'textContent', value: settings.texts.durationTextContent },
+                { id: 'datesTextContent', prop: 'textContent', value: settings.texts.datesTextContent },
+                { id: 'locationTextContent', prop: 'textContent', value: settings.texts.locationTextContent },
+                { id: 'contactPhoneDisplay', prop: 'textContent', value: settings.texts.contactPhoneDisplay },
+                { id: 'ourGoalHeadingText', prop: 'textContent', value: settings.texts.ourGoalHeadingText },
+                { id: 'ourGoalDescriptionText', prop: 'textContent', value: settings.texts.ourGoalDescriptionText },
+                { id: 'limitedSeatsTextContent', prop: 'textContent', value: settings.texts.limitedSeatsTextContent },
+                { id: 'bottomContactInfoText', prop: 'textContent', value: settings.texts.bottomContactInfoText },
+                { id: 'bottomPhoneTextContent', prop: 'textContent', value: settings.texts.bottomPhoneTextContent },
+                { id: 'hashtagsTextContent', prop: 'textContent', value: settings.texts.hashtagsTextContent }
+            ];
 
-            // Apply text content
-            document.getElementById('schoolLogo').src = settings.logoUrl;
-            document.getElementById('mainTitleText').textContent = settings.texts.mainTitle;
-            document.getElementById('campSloganText').textContent = settings.texts.campSlogan;
-            document.getElementById('campNameText').textContent = settings.texts.campName;
-            document.getElementById('registrationStatusText').textContent = settings.texts.registrationStatus;
-            document.getElementById('programIntroText').textContent = settings.texts.programIntro;
-            document.getElementById('programHeadingText').textContent = settings.texts.programHeading;
-            document.getElementById('educationalHoursHeadingText').textContent = settings.texts.educationalHoursHeading;
-            document.getElementById('recreationalHoursHeadingText').textContent = settings.texts.recreationalHoursHeading;
-            document.getElementById('methodologyHeadingText').textContent = settings.texts.methodologyHeading;
-            document.getElementById('methodologyDescriptionText').textContent = settings.texts.methodologyDescriptionText;
-            document.getElementById('durationTextContent').textContent = settings.texts.durationTextContent;
-            document.getElementById('datesTextContent').textContent = settings.texts.datesTextContent;
-            document.getElementById('locationTextContent').textContent = settings.texts.locationTextContent;
-            document.getElementById('contactPhoneDisplay').textContent = settings.texts.contactPhoneDisplay;
-            document.getElementById('ourGoalHeadingText').textContent = settings.texts.ourGoalHeadingText;
-            document.getElementById('ourGoalDescriptionText').textContent = settings.texts.ourGoalDescriptionText;
-            document.getElementById('limitedSeatsTextContent').textContent = settings.texts.limitedSeatsTextContent;
-            document.getElementById('bottomContactInfoText').textContent = settings.texts.bottomContactInfoText;
-            document.getElementById('bottomPhoneTextContent').textContent = settings.texts.bottomPhoneTextContent;
-            document.getElementById('hashtagsTextContent').textContent = settings.texts.hashtagsTextContent;
+            // Loop through elements and update them, with null checks
+            elementsToUpdate.forEach(item => {
+                const element = document.getElementById(item.id);
+                if (element) {
+                    const value = item.value !== undefined ? item.value : '';
+                    if (item.prop === 'src') {
+                        element.src = value;
+                    } else {
+                        element.textContent = value;
+                    }
+                } else {
+                    console.warn(`Element with ID '${item.id}' not found. Cannot set ${item.prop}.`);
+                }
+            });
 
-            // Update slider phrases
-            const sliderSlides = document.getElementById('sliderSlides');
-            const sliderDots = document.getElementById('sliderDots');
-            sliderSlides.innerHTML = '';
-            sliderDots.innerHTML = '';
-
-            if (settings.texts.sliderPhrases && settings.texts.sliderPhrases.length > 0) {
-                settings.texts.sliderPhrases.forEach((phrase, index) => {
-                    const slideDiv = document.createElement('div');
-                    slideDiv.classList.add('slide');
-                    slideDiv.textContent = phrase; 
-                    sliderSlides.appendChild(slideDiv);
-
-                    const dotSpan = document.createElement('span');
-                    dotSpan.classList.add('dot');
-                    dotSpan.dataset.slide = index;
-                    dotSpan.addEventListener('click', () => showSlide(index));
-                    sliderDots.appendChild(dotSpan);
-                });
-                showSlide(0); // Reset slider to first slide
-                startSlider(); // Restart slider with new content
-            } else {
-                // If no phrases, display a default message and stop slider
-                const slideDiv = document.createElement('div');
-                slideDiv.classList.add('slide');
-                slideDiv.textContent = "لا توجد جمل لعرضها";
-                sliderSlides.appendChild(slideDiv);
-                clearInterval(slideInterval);
-            }
+            // Update global slider phrases variable
+            window.sliderPhrases = settings.texts.sliderPhrases && Array.isArray(settings.texts.sliderPhrases) ? settings.texts.sliderPhrases : defaultSettings.texts.sliderPhrases;
+            
+            // Re-render slides based on the updated global variable
+            renderSlides();
         }
 
         // Fetch settings from Firestore
@@ -757,13 +1051,14 @@
             }
         });
 
-        // Event Listeners for slider navigation
-        document.getElementById('nextBtn').addEventListener('click', nextSlide);
-        document.getElementById('prevBtn').addEventListener('click', prevSlide);
-
         // Start slider on page load with default settings (will be overwritten by Firestore if available)
         document.addEventListener('DOMContentLoaded', () => {
-            applySettings(defaultSettings); // Apply default settings initially
+            // Initialize global slider elements once DOM is ready
+            sliderContainer = document.getElementById('sliderContainer');
+            slidesWrapper = document.getElementById('sliderSlides');
+
+            // Initial call to apply default settings, which will also render the slider
+            applySettings(defaultSettings); 
             // Setup intersection observer for scroll reveal animations
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
