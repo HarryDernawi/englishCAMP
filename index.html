@@ -98,6 +98,7 @@
             display: block;
             margin-left: auto;
             margin-right: auto;
+            cursor: pointer; /* Added for visual feedback that it's clickable */
         }
         .content-section {
             padding: 0 1.5rem;
@@ -215,12 +216,14 @@
         <a href="index.html" class="nav-button active">الرئيسية</a>
         <a href="register.html" class="nav-button">التسجيل</a>
         <a href="contact.html" class="nav-button">تواصل معنا</a>
-        <a href="dashboard.html" class="nav-button">لوحة التحكم</a>
+        <a href="https://www.facebook.com/AcademySchools.ly" target="_blank" class="nav-button">فيسبوك</a>
     </div>
 
     <div class="ad-container">
         <div class="header-bg">
-            <img id="schoolLogo" src="487167779_29373139318966172_855389515226951087_n-removebg-preview.png" alt="شعار مدارس الأكاديمية" class="school-logo">
+            <a href="index.html">
+                <img id="schoolLogo" src="https://storage.googleapis.com/gemini-generated-images-prod/images/487167779_29373139318966172_855389515226951087_n-removebg-preview.png-eceb72d9-53f1-4e83-8187b6db22cc" alt="شعار مدارس الأكاديمية" class="school-logo" onerror="this.onerror=null;this.src='https://placehold.co/100x100/A0AEC0/FFFFFF?text=Logo';">
+            </a>
             <h1 class="text-3xl font-extrabold mb-3" id="mainTitleText">الـ English مش لازم يكون عقدة ! 🎯</h1>
             <p class="text-xl font-semibold mb-2" id="campSloganText">تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!</p>
             <p class="text-lg font-medium" id="campNameText">مخيم اللغة الإنجليزية</p>
@@ -314,7 +317,7 @@
         const adminSettingsDocRef = doc(db, `artifacts/${appId}/public/data/admin_settings`, 'config');
 
         const defaultSettings = {
-            logoUrl: '487167779_29373139318966172_855389515226951087_n-removebg-preview.png',
+            logoUrl: 'https://storage.googleapis.com/gemini-generated-images-prod/images/487167779_29373139318966172_855389515226951087_n-removebg-preview.png-eceb72d9-53f1-4e83-8187b6db22cc', // Updated to public URL
             colors: {
                 bodyBg: '#E6F0F5',
                 headerGradientStart: '#3F72AF',
@@ -333,7 +336,7 @@
                 educationalHoursHeading: "🧠 3 ساعات تعليمية فعّالة:",
                 recreationalHoursHeading: "🎨 1 ساعة ترفيهية يومية:",
                 methodologyHeading: "📘 المنهج المستخدم:",
-                methodologyDescriptionText: "McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:\n(الاستماع – التحدث – القراءة – الكتابة)",
+                methodologyDescriptionText: "McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياته ويطوّر مهاراتهم الأربع:\n(الاستماع – التحدث – القراءة – الكتابة)",
                 durationTextContent: "🗓️ المدة: 6 أسابيع متكاملة",
                 datesTextContent: "📆 من 1 يونيو إلى 15 يوليو 2025",
                 locationTextContent: "📍 الموقع: تاجوراء – خلف منتزه السندباد",
