@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلان مخيم اللغة الإنجليزية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif; /* Using Cairo for Arabic text */
+            background-color: #f0f4f8; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .ad-container {
+            background-color: #ffffff; /* White background for the ad */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Deeper shadow */
+            max-width: 768px; /* Max width for larger screens */
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-bg {
+            background: linear-gradient(to right, #6366f1, #8b5cf6); /* Gradient purple */
+            padding: 2.5rem 2rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+        }
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            animation: pulse-light 5s infinite ease-in-out;
+        }
+        @keyframes pulse-light {
+            0% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+            100% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+        }
+        .content-section {
+            padding: 2.5rem 2rem;
+        }
+        .cta-button {
+            background: linear-gradient(to right, #10b981, #059669); /* Green gradient */
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: inline-block; /* To allow padding and margin */
+            margin-top: 2rem;
+        }
+        .cta-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start; /* Align to start for multi-line text */
+            justify-content: flex-end; /* Align text to right for RTL */
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+            color: #4b5563; /* Darker gray for text */
+            text-align: right;
+        }
+        .feature-icon {
+            color: #8b5cf6; /* Purple icon color */
+            font-size: 1.5rem;
+            flex-shrink: 0; /* Prevent icon from shrinking */
+        }
+        /* Responsive adjustments */
+        @media (min-width: 640px) {
+            .ad-container {
+                flex-direction: row; /* Side-by-side on larger screens */
+                text-align: right; /* Align text to right for RTL */
+            }
+            .header-bg {
+                flex: 1;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 1.5rem; /* Rounded bottom right for side layout */
+                border-top-left-radius: 1.5rem;
+                padding: 2.5rem 2rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: flex-end; /* Align header content to the right */
+            }
+            .content-section {
+                flex: 2;
+                text-align: right; /* Align content to the right for RTL */
+            }
+            .feature-item {
+                justify-content: flex-end; /* Align feature items to the right */
+            }
+        }
+        .slogan-generator-section {
+            background-color: #f8fafc; /* Light blue-gray for this section */
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .slogan-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            margin-bottom: 1rem;
+        }
+        .generate-button {
+            background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        .generate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .slogan-output {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #ecfdf5; /* Light green background for output */
+            border: 1px dashed #34d399;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #065f46;
+            min-height: 3rem; /* To prevent layout shift */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #8b5cf6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="ad-container">
+        <div class="header-bg">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+                الـ English مش لازم يكون عقدة ! 🎯
+            </h1>
+            <p class="text-xl md:text-2xl font-semibold mb-2">
+                تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!
+            </p>
+            <p class="text-lg md:text-xl font-medium mb-4">
+                نقدّم لك مخيمًا صيفيًا مختلفًا...
+            </p>
+            <p class="text-xl md:text-2xl font-semibold mb-2">
+                مخيم اللغة الإنجليزية
+            </p>
+            <p class="text-lg md:text-xl font-medium">
+                الدورة الثانية - تسجيل مفتوح الآن!
+            </p>
+            <img src="https://placehold.co/150x150/8b5cf6/ffffff?text=📚" alt="Book Icon" class="mt-8 mx-auto md:mr-0 md:ml-auto rounded-full w-24 h-24 object-cover">
+        </div>
+
+        <div class="content-section">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">
+                برنامج يومي متوازن ومصمّم بعناية:
+            </h2>
+            <p class="text-gray-600 mb-4 leading-relaxed text-lg">
+                بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.
+            </p>
+
+            <div class="text-right mb-8">
+                <p class="text-gray-700 font-bold text-xl mb-3">🕘 من 9 صباحًا إلى 1 ظهرًا (4 ساعات):</p>
+                <div class="mb-4">
+                    <p class="text-gray-700 font-semibold text-lg mb-2">🧠 3 ساعات تعليمية فعّالة:</p>
+                    <ul class="list-none pr-0">
+                        <li class="feature-item">
+                            <span class="feature-icon">🗣️</span>
+                            <span>محادثة حقيقية مع مدرسين محترفين</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">✍️</span>
+                            <span>أنشطة قراءة وكتابة وفق منهج McMillion الدولي</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🎲</span>
+                            <span>ألعاب تعليمية تحفّز التفاعل وتنمّي الثقة</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="text-gray-700 font-semibold text-lg mb-2">🎨 1 ساعة ترفيهية يومية:</p>
+                    <ul class="list-none pr-0">
+                        <li class="feature-item">
+                            <span class="feature-icon">🏊</span>
+                            <span>أيام سباحة مرحة</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🖌️</span>
+                            <span>ورش فنية وإبداعية</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🎬</span>
+                            <span>عروض سينما تعليمية</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🤝</span>
+                            <span>ألعاب جماعية لتعزيز روح الفريق</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="text-right mb-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">📘 المنهج المستخدم:</h3>
+                <p class="text-gray-600 leading-relaxed text-lg">
+                    McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:
+                    <br>
+                    <span class="font-semibold">(الاستماع – التحدث – القراءة – الكتابة)</span>
+                </p>
+            </div>
+
+            <div class="text-right mb-8">
+                <p class="text-gray-700 font-bold text-xl mb-3">🗓️ المدة: 6 أسابيع متكاملة</p>
+                <p class="text-gray-700 font-bold text-xl mb-3">📆 من 1 يونيو إلى 15 يوليو 2025</p>
+                <p class="text-gray-700 font-bold text-xl mb-3">📍 الموقع: تاجوراء – خلف منتزه السندباد</p>
+                <p class="text-gray-700 font-bold text-xl mb-3">📞 للتسجيل والاستفسار: <span dir="ltr">0929272725</span></p>
+            </div>
+
+            <div class="text-right mb-8">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">🚸 هدفنا:</h3>
+                <p class="text-gray-600 leading-relaxed text-lg">
+                    أن نغيّر نظرة الطفل للغة الإنجليزية،
+                    من "مادة دراسية" إلى "مهارة ممتعة وقوية" يعيشها يوميًا.
+                </p>
+            </div>
+
+            <p class="text-gray-700 font-semibold mb-4 text-lg">
+                📌 المقاعد محدودة لضمان الجودة... لا تتردد!
+            </p>
+
+            <a href="tel:+218929272725" class="cta-button">
+                سجل الآن!
+            </a>
+
+            <div class="slogan-generator-section">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                    مولد الشعارات الإبداعية ✨
+                </h3>
+                <p class="text-gray-600 mb-4">
+                    أدخل كلمات مفتاحية (مثل: مرح، تعلم، مستقبل) للحصول على شعار لمخيم اللغة الإنجليزية:
+                </p>
+                <input type="text" id="sloganInput" class="slogan-input" placeholder="أدخل كلماتك المفتاحية هنا (مثال: مرح، تعلم، ثقة)">
+                <button id="generateSloganBtn" class="generate-button">
+                    توليد الشعار
+                </button>
+                <div id="sloganOutput" class="slogan-output">
+                    سيظهر الشعار هنا...
+                </div>
+            </div>
+
+            <div class="mt-8 text-gray-500 text-sm">
+                <p>للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:</p>
+                <p>الهاتف: <span dir="ltr">0929272725</span></p>
+                <p class="text-sm text-gray-400">#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase global variables are provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Get references to the DOM elements
+        const sloganInput = document.getElementById('sloganInput');
+        const generateSloganBtn = document.getElementById('generateSloganBtn');
+        const sloganOutput = document.getElementById('sloganOutput');
+
+        // Function to generate slogan using Gemini API
+        generateSloganBtn.addEventListener('click', async () => {
+            const keywords = sloganInput.value.trim();
+            if (!keywords) {
+                sloganOutput.innerHTML = '<span style="color: #dc2626;">الرجاء إدخال بعض الكلمات المفتاحية.</span>';
+                return;
+            }
+
+            // Show loading indicator
+            sloganOutput.innerHTML = '<span class="loading-spinner"></span> جاري توليد الشعار...';
+            generateSloganBtn.disabled = true; // Disable button during generation
+
+            try {
+                // Construct the prompt for the LLM
+                const prompt = `Generate a catchy and inspiring slogan for an English language camp. The slogan should be short, memorable, and focused on fun, learning, and confidence. Incorporate these keywords: ${keywords}. Provide only the slogan, no extra text.`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // Canvas will automatically provide the API key
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    sloganOutput.textContent = text.trim(); // Display the generated slogan
+                } else {
+                    sloganOutput.innerHTML = '<span style="color: #dc2626;">عذرًا، لم أتمكن من توليد شعار. حاول مرة أخرى.</span>';
+                    console.error('Unexpected API response structure:', result);
+                }
+            } catch (error) {
+                sloganOutput.innerHTML = '<span style="color: #dc2626;">حدث خطأ أثناء الاتصال بالخدمة. الرجاء المحاولة لاحقًا.</span>';
+                console.error('Error generating slogan:', error);
+            } finally {
+                generateSloganBtn.disabled = false; // Re-enable button
+            }
+        });
+    </script>
+</body>
+</html>
