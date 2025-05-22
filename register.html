@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلان مخيم اللغة الإنجليزية - التسجيل</title>
+    <!-- Visualization & Content Choices:
+        - Registration Form: HTML form, JS to Firestore. Goal: Action (Register). Interaction: User input.
+        - NO SVG/Mermaid used. Chart.js/Plotly.js not applicable for this report type.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --body-bg: #E6F0F5;
+            --header-gradient-start: #3F72AF;
+            --header-gradient-end: #112D4E;
+            --feature-icon-color: #3B82F6;
+            --form-submit-button-start: #3B82F6;
+            --form-submit-button-end: #2563EB;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--body-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: var(--header-gradient-end);
+            width: 100%;
+            max-width: 768px;
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .nav-button {
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .nav-button.active {
+            background-color: var(--header-gradient-start);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .page-container {
+            background-color: #ffffff;
+            border-radius: 0 0 1.5rem 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 768px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        .registration-form-section {
+            background-color: #f8fafc;
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: right;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+            font-size: 1rem;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="tel"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            background-color: #ffffff;
+        }
+        .form-group input[type="radio"] {
+            margin-left: 0.5rem;
+        }
+        .form-group .radio-group label {
+            display: inline-block;
+            margin-left: 1rem;
+            font-weight: 400;
+        }
+        .form-submit-button {
+            background: linear-gradient(to right, var(--form-submit-button-start), var(--form-submit-button-end));
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: auto;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+        .form-submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="index.html" class="nav-button">الرئيسية</a>
+        <a href="register.html" class="nav-button active">التسجيل</a>
+        <a href="contact.html" class="nav-button">تواصل معنا</a>
+    </div>
+
+    <div class="page-container">
+        <div class="registration-form-section">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">نموذج التسجيل</h3>
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="studentName">اسم الطالب/ة بالكامل:</label>
+                    <input type="text" id="studentName" name="studentName" required class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="studentAge">عمر الطالب/ة:</label>
+                    <input type="number" id="studentAge" name="studentAge" min="5" max="18" required class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="englishLevel">مستوى اللغة الإنجليزية:</label>
+                    <select id="englishLevel" name="englishLevel" required class="w-full">
+                        <option value="">اختر المستوى</option>
+                        <option value="beginner">مبتدئ</option>
+                        <option value="intermediate">متوسط</option>
+                        <option value="advanced">متقدم</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>القسم الدراسي:</label>
+                    <div class="radio-group flex justify-end gap-4 mt-2">
+                        <label for="localSection">
+                            <input type="radio" id="localSection" name="studentSection" value="local" required>
+                            محلي
+                        </label>
+                        <label for="internationalSection">
+                            <input type="radio" id="internationalSection" name="studentSection" value="international">
+                            دولي
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="parentPhone">رقم هاتف ولي الأمر:</label>
+                    <input type="tel" id="parentPhone" name="parentPhone" pattern="[0-9]{10}" placeholder="مثال: 0921234567" required class="w-full" dir="ltr">
+                    <small class="text-gray-500 text-sm">الرجاء إدخال رقم هاتف مكون من 10 أرقام.</small>
+                </div>
+                <button type="submit" class="form-submit-button">إرسال طلب التسجيل</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modalMessage" class="text-lg font-semibold text-gray-800"></p>
+            <p class="text-gray-600 mt-2">سنقوم بالتواصل معكم قريباً لإتمام عملية التسجيل.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserId = null;
+
+        const registrationForm = document.getElementById('registrationForm');
+        const studentNameInput = document.getElementById('studentName');
+        const studentAgeInput = document.getElementById('studentAge');
+        const englishLevelSelect = document.getElementById('englishLevel');
+        const localSectionRadio = document.getElementById('localSection');
+        const internationalSectionRadio = document.getElementById('internationalSection');
+        const parentPhoneInput = document.getElementById('parentPhone');
+        const modal = document.getElementById('myModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeButton = document.getElementsByClassName('close-button')[0];
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                console.log("User authenticated:", currentUserId);
+            } else {
+                console.log("No user authenticated, signing in anonymously.");
+                signInAnonymously(auth).then(anonUser => {
+                    currentUserId = anonUser.user.uid;
+                    console.log("Signed in anonymously:", currentUserId);
+                }).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    showModal("حدث خطأ في المصادقة. قد لا تعمل بعض الميزات.");
+                });
+            }
+        });
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                return unsafe;
+            }
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/`/g, '\\`')
+                .replace(/\$/g, '\\$');
+        }
+
+        function getRegistrationsCollectionRef() {
+            if (!currentUserId) {
+                console.error("User ID is not available for Firestore operations.");
+                return null;
+            }
+            return collection(db, `artifacts/${appId}/public/data/registrations`);
+        }
+
+        registrationForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const studentData = {
+                name: studentNameInput.value,
+                age: parseInt(studentAgeInput.value),
+                englishLevel: englishLevelSelect.value,
+                section: localSectionRadio.checked ? localSectionRadio.value : (internationalSectionRadio.checked ? internationalSectionRadio.value : ''),
+                parentPhone: parentPhoneInput.value,
+                contacted: false,
+                label: ''
+            };
+
+            const phonePattern = /^[0-9]{10}$/;
+            if (!phonePattern.test(studentData.parentPhone)) {
+                showModal('الرجاء إدخال رقم هاتف ولي أمر صحيح مكون من 10 أرقام.');
+                return;
+            }
+
+            try {
+                const registrationsColRef = getRegistrationsCollectionRef();
+                if (!registrationsColRef) {
+                    showModal("لا يمكن حفظ التسجيل: لم يتم تهيئة معرف المستخدم.");
+                    return;
+                }
+                await addDoc(registrationsColRef, studentData);
+                console.log('بيانات التسجيل محفوظة في Firestore:', studentData);
+                showModal('تم استلام طلب تسجيل الطالب/ة ' + studentData.name + ' بنجاح!');
+                registrationForm.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showModal("حدث خطأ أثناء حفظ التسجيل.");
+            }
+        });
+
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
