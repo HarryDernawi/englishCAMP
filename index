@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلان مخيم اللغة الإنجليزية - الرئيسية</title>
+    <!-- Visualization & Content Choices:
+        - Logo: img tag, src from admin. Goal: Branding. Interaction: None.
+        - Header Slider: HTML+JS, content from admin. Goal: Engagement, Info. Interaction: Auto-scroll, nav buttons.
+        - Camp Info (Texts): HTML with updatable spans/divs. Goal: Inform. Interaction: None.
+        - Slogan Generator: HTML form, JS to Gemini API. Goal: Engagement, Tool. Interaction: User input.
+        - Registered Students (Public): HTML list/cards from Firestore. Goal: Social Proof. Interaction: None.
+        - NO SVG/Mermaid used. Chart.js/Plotly.js not applicable for this report type.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --body-bg: #E6F0F5;
+            --header-gradient-start: #3F72AF;
+            --header-gradient-end: #112D4E;
+            --feature-icon-color: #3B82F6;
+            --form-submit-button-start: #3B82F6;
+            --form-submit-button-end: #2563EB;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--body-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: var(--header-gradient-end);
+            width: 100%;
+            max-width: 768px;
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .nav-button {
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .nav-button.active {
+            background-color: var(--header-gradient-start);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .ad-container {
+            background-color: #ffffff;
+            border-radius: 0 0 1.5rem 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 768px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+        .header-bg {
+            background: linear-gradient(to right, var(--header-gradient-start), var(--header-gradient-end));
+            padding: 2.5rem 2rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+        .header-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            animation: pulse-light 5s infinite ease-in-out;
+        }
+        @keyframes pulse-light {
+            0% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+            100% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+        }
+        .content-section {
+            padding: 2.5rem 2rem;
+        }
+        .cta-button {
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: inline-block;
+            margin-top: 2rem;
+        }
+        .cta-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+            color: #4b5563;
+            text-align: right;
+        }
+        .feature-icon {
+            color: var(--feature-icon-color);
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        @media (min-width: 640px) {
+            .ad-container {
+                flex-direction: row;
+                text-align: right;
+                border-radius: 0 1.5rem 1.5rem 1.5rem;
+            }
+            .header-bg {
+                flex: 1;
+                border-top-right-radius: 1.5rem;
+                border-bottom-right-radius: 1.5rem;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                padding: 2.5rem 2rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: flex-end;
+            }
+            .content-section {
+                flex: 2;
+                text-align: right;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 1.5rem;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .navbar {
+                border-radius: 1.5rem 1.5rem 0 0;
+            }
+        }
+        .slogan-generator-section, .registered-students-section {
+            background-color: #f8fafc;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2.5rem;
+            border: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: right;
+        }
+        .slogan-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            margin-bottom: 1rem;
+        }
+        .generate-button {
+            background: linear-gradient(to right, #f97316, #ea580c);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        .generate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .slogan-output {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #ecfdf5;
+            border: 1px dashed #34d399;
+            border-radius: 0.75rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #065f46;
+            min-height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--feature-icon-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            border-radius: 1.5rem 1.5rem 0 0;
+        }
+        .slides {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(to right, var(--header-gradient-start), var(--header-gradient-end));
+            border-radius: 0.75rem;
+        }
+        .slider-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            border-radius: 0.5rem;
+            z-index: 10;
+            transition: background-color 0.3s ease;
+        }
+        .slider-nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .prev-slide {
+            left: 10px;
+        }
+        .next-slide {
+            right: 10px;
+        }
+        .slider-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .dot.active {
+            background-color: white;
+        }
+        .school-logo {
+            width: 120px;
+            height: auto;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        @media (min-width: 640px) {
+            .school-logo {
+                margin-right: 0;
+                margin-left: auto;
+            }
+            .slider-container {
+                border-radius: 1.5rem 0 0 0;
+            }
+        }
+        .admin-login-button {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: #60a5fa;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            z-index: 999;
+            opacity: 0.2;
+            transition: opacity 0.3s ease;
+        }
+        .admin-login-button:hover {
+            opacity: 1;
+        }
+        .registered-students-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .student-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: right;
+            position: relative;
+        }
+        .student-card.contacted {
+            border-left: 5px solid #10b981;
+        }
+        .student-card h4 {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #1a202c;
+        }
+        .student-card p {
+            font-size: 0.95rem;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="index.html" class="nav-button active">الرئيسية</a>
+        <a href="register.html" class="nav-button">التسجيل</a>
+        <a href="contact.html" class="nav-button">تواصل معنا</a>
+    </div>
+
+    <div class="ad-container">
+        <div class="slider-container">
+            <div class="slides" id="sliderSlides">
+                </div>
+            <button class="slider-nav-btn prev-slide" id="prevSlideBtn">❮</button>
+            <button class="slider-nav-btn next-slide" id="nextSlideBtn">❯</button>
+            <div class="slider-dots" id="sliderDots">
+                </div>
+        </div>
+
+        <div class="header-bg sm:rounded-tr-2xl sm:rounded-bl-none">
+            <img id="schoolLogo" src="487167779_29373139318966172_855389515226951087_n-removebg-preview.png" alt="شعار مدارس الأكاديمية" class="school-logo">
+
+            <h1 id="mainTitleText" class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
+                الـ English مش لازم يكون عقدة ! 🎯
+            </h1>
+            <p id="campSloganText" class="text-xl md:text-2xl font-semibold mb-2">
+                تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!
+            </p>
+            <p id="campNameText" class="text-lg md:text-xl font-medium">
+                مخيم اللغة الإنجليزية
+            </p>
+            <p id="registrationStatusText" class="text-lg md:text-xl font-medium">
+                الدورة الثانية - تسجيل مفتوح الآن!
+            </p>
+        </div>
+
+        <div class="content-section">
+            <h2 id="programHeadingText" class="text-3xl font-bold text-gray-800 mb-6">
+                برنامج يومي متوازن ومصمّم بعناية:
+            </h2>
+            <p id="programIntroText" class="text-gray-600 mb-4 leading-relaxed text-lg">
+                بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.
+            </p>
+
+            <div class="text-right mb-8">
+                <p class="text-gray-700 font-bold text-xl mb-3">🕘 من 9 صباحًا إلى 1 ظهرًا (4 ساعات):</p>
+                <div class="mb-4">
+                    <p id="educationalHoursHeadingText" class="text-gray-700 font-semibold text-lg mb-2">🧠 3 ساعات تعليمية فعّالة:</p>
+                    <ul class="list-none pr-0">
+                        <li class="feature-item">
+                            <span class="feature-icon">🗣️</span>
+                            <span>محادثة حقيقية مع مدرسين محترفين</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">✍️</span>
+                            <span>أنشطة قراءة وكتابة وفق منهج McMillion الدولي</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🎲</span>
+                            <span>ألعاب تعليمية تحفّز التفاعل وتنمّي الثقة</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <p id="recreationalHoursHeadingText" class="text-gray-700 font-semibold text-lg mb-2">🎨 1 ساعة ترفيهية يومية:</p>
+                    <ul class="list-none pr-0">
+                        <li class="feature-item">
+                            <span class="feature-icon">🏊</span>
+                            <span>أيام سباحة مرحة</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🖌️</span>
+                            <span>ورش فنية وإبداعية</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🎬</span>
+                            <span>عروض سينما تعليمية</span>
+                        </li>
+                        <li class="feature-item">
+                            <span class="feature-icon">🤝</span>
+                            <span>ألعاب جماعية لتعزيز روح الفريق</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="text-right mb-8">
+                <h3 id="methodologyHeadingText" class="text-2xl font-bold text-gray-800 mb-4">📘 المنهج المستخدم:</h3>
+                <p id="methodologyDescriptionText" class="text-gray-600 leading-relaxed text-lg">
+                    McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:
+                    <br>
+                    <span class="font-semibold">(الاستماع – التحدث – القراءة – الكتابة)</span>
+                </p>
+            </div>
+
+            <div class="text-right mb-8">
+                <p id="durationTextContent" class="text-gray-700 font-bold text-xl mb-3">🗓️ المدة: 6 أسابيع متكاملة</p>
+                <p id="datesTextContent" class="text-700 font-bold text-xl mb-3">📆 من 1 يونيو إلى 15 يوليو 2025</p>
+                <p id="locationTextContent" class="text-gray-700 font-bold text-xl mb-3">📍 الموقع: تاجوراء – خلف منتزه السندباد</p>
+                <p id="contactPhoneDisplay" class="text-gray-700 font-bold text-xl mb-3">📞 للتسجيل والاستفسار: <span dir="ltr">0929272725</span></p>
+            </div>
+
+            <div class="text-right mb-8">
+                <h3 id="ourGoalHeadingText" class="text-2xl font-bold text-gray-800 mb-4">🚸 هدفنا:</h3>
+                <p id="ourGoalDescriptionText" class="text-gray-600 leading-relaxed text-lg">
+                    أن نغيّر نظرة الطفل للغة الإنجليزية،
+                    من "مادة دراسية" إلى "مهارة ممتعة وقوية" يعيشها يوميًا.
+                </p>
+            </div>
+
+            <p id="limitedSeatsTextContent" class="text-gray-700 font-semibold mb-4 text-lg">
+                📌 المقاعد محدودة لضمان الجودة... لا تتردد!
+            </p>
+
+            <a href="register.html" class="cta-button">
+                سجل الآن!
+            </a>
+
+            <div class="slogan-generator-section">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                    مولد الشعارات الإبداعية ✨
+                </h3>
+                <p class="text-gray-600 mb-4">
+                    أدخل كلمات مفتاحية (مثل: مرح، تعلم، مستقبل) للحصول على شعار لمخيم اللغة الإنجليزية:
+                </p>
+                <input type="text" id="sloganInput" class="slogan-input" placeholder="أدخل كلماتك المفتاحية هنا (مثال: مرح، تعلم، ثقة)">
+                <button id="generateSloganBtn" class="generate-button">
+                    توليد الشعار
+                </button>
+                <div id="sloganOutput" class="slogan-output">
+                    سيظهر الشعار هنا...
+                </div>
+            </div>
+
+            <div id="registeredStudentsDisplaySection" class="registered-students-section">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">الطلاب المسجلون</h3>
+                <div id="registeredStudentsListDisplay" class="registered-students-list">
+                    <p class="text-gray-500">جاري تحميل بيانات المسجلين...</p>
+                </div>
+            </div>
+
+            <div class="mt-8 text-gray-500 text-sm">
+                <p id="bottomContactInfoText">للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:</p>
+                <p id="bottomPhoneTextContent">الهاتف: <span dir="ltr">0929272725</span></p>
+                <p id="hashtagsTextContent" class="text-sm text-gray-400">#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp</p>
+            </div>
+        </div>
+    </div>
+
+    <button id="adminLoginBtn" class="admin-login-button">دخول المدير</button>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modalMessage" class="text-lg font-semibold text-gray-800"></p>
+            <p class="text-gray-600 mt-2">سنقوم بالتواصل معكم قريباً لإتمام عملية التسجيل.</p>
+        </div>
+    </div>
+
+    <div id="adminLoginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeLoginModalBtn">&times;</span>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">تسجيل دخول المدير</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">اسم المستخدم:</label>
+                    <input type="text" id="username" class="w-full" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">كلمة المرور:</label>
+                    <input type="password" id="password" class="w-full" required>
+                </div>
+                <button type="submit" class="form-submit-button">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserId = null;
+
+        const defaultSettings = {
+            logoUrl: '487167779_29373139318966172_855389515226951087_n-removebg-preview.png',
+            colors: {
+                bodyBg: '#E6F0F5',
+                headerGradientStart: '#3F72AF',
+                headerGradientEnd: '#112D4E',
+                featureIconColor: '#3B82F6',
+                formSubmitButtonStart: '#3B82F6',
+                formSubmitButtonEnd: '#2563EB'
+            },
+            texts: {
+                mainTitle: "الـ English مش لازم يكون عقدة ! 🎯",
+                campSlogan: "تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!",
+                campName: "مخيم اللغة الإنجليزية",
+                registrationStatus: "الدورة الثانية - تسجيل مفتوح الآن!",
+                programIntro: "بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.",
+                programHeading: "برنامج يومي متوازن ومصمّم بعناية:",
+                educationalHoursHeading: "🧠 3 ساعات تعليمية فعّالة:",
+                recreationalHoursHeading: "🎨 1 ساعة ترفيهية يومية:",
+                methodologyHeading: "📘 المنهج المستخدم:",
+                methodologyDescriptionText: "McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:\n(الاستماع – التحدث – القراءة – الكتابة)",
+                durationTextContent: "🗓️ المدة: 6 أسابيع متكاملة",
+                datesTextContent: "📆 من 1 يونيو إلى 15 يوليو 2025",
+                locationTextContent: "📍 الموقع: تاجوراء – خلف منتزه السندباد",
+                contactPhoneDisplay: "📞 للتسجيل والاستفسار: 0929272725",
+                ourGoalHeadingText: "🚸 هدفنا:",
+                ourGoalDescriptionText: "أن نغيّر نظرة الطفل للغة الإنجليزية،\nمن \"مادة دراسية\" إلى \"مهارة ممتعة وقوية\" يعيشها يوميًا.",
+                limitedSeatsTextContent: "📌 المقاعد محدودة لضمان الجودة... لا تتردد!",
+                bottomContactInfoText: "للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:",
+                bottomPhoneTextContent: "الهاتف: 0929272725",
+                hashtagsTextContent: "#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp",
+                sliderPhrases: [
+                    "الإنجليزية: مفتاح طفلك نحو عالم أوسع!",
+                    "اجعل تعلم الإنجليزية مغامرة ممتعة لطفلك!",
+                    "بناء الثقة في اللغة الإنجليزية، خطوة بخطوة.",
+                    "صيف مليء بالمرح والتعلم... بالإنجليزية!",
+                    "مستقبل طفلك يبدأ بإتقان الإنجليزية."
+                ]
+            }
+        };
+
+        const sloganInput = document.getElementById('sloganInput');
+        const generateSloganBtn = document.getElementById('generateSloganBtn');
+        const sloganOutput = document.getElementById('sloganOutput');
+        const modal = document.getElementById('myModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeButton = document.getElementsByClassName('close-button')[0];
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const adminLoginModal = document.getElementById('adminLoginModal');
+        const closeLoginModalBtn = document.getElementById('closeLoginModalBtn');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const sliderSlides = document.getElementById('sliderSlides');
+        const prevSlideBtn = document.getElementById('prevSlideBtn');
+        const nextSlideBtn = document.getElementById('nextSlideBtn');
+        const sliderDots = document.getElementById('sliderDots');
+        const registeredStudentsListDisplay = document.getElementById('registeredStudentsListDisplay');
+
+        window.sliderPhrases = defaultSettings.texts.sliderPhrases;
+        let currentSlideIndex = 0;
+        let slideInterval;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                console.log("User authenticated:", currentUserId);
+                loadAdminSettings();
+                loadRegistrations();
+            } else {
+                console.log("No user authenticated, signing in anonymously.");
+                signInAnonymously(auth).then(anonUser => {
+                    currentUserId = anonUser.user.uid;
+                    console.log("Signed in anonymously:", currentUserId);
+                    loadAdminSettings();
+                    loadRegistrations();
+                }).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    showModal("حدث خطأ في المصادقة. قد لا تعمل بعض الميزات.");
+                });
+            }
+        });
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                return unsafe;
+            }
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/`/g, '\\`')
+                .replace(/\$/g, '\\$');
+        }
+
+        const adminSettingsDocRef = doc(db, `artifacts/${appId}/public/data/admin_settings`, 'config');
+
+        function applySettings(settings) {
+            document.getElementById('schoolLogo').src = settings.logoUrl || defaultSettings.logoUrl;
+
+            if (settings.colors) {
+                document.documentElement.style.setProperty('--body-bg', settings.colors.bodyBg);
+                document.documentElement.style.setProperty('--header-gradient-start', settings.colors.headerGradientStart);
+                document.documentElement.style.setProperty('--header-gradient-end', settings.colors.headerGradientEnd);
+                document.documentElement.style.setProperty('--feature-icon-color', settings.colors.featureIconColor);
+            }
+
+            if (settings.texts) {
+                document.getElementById('mainTitleText').textContent = settings.texts.mainTitle || '';
+                document.getElementById('campSloganText').textContent = settings.texts.campSlogan || '';
+                document.getElementById('campNameText').textContent = settings.texts.campName || '';
+                document.getElementById('registrationStatusText').textContent = settings.texts.registrationStatus || '';
+                document.getElementById('programIntroText').textContent = settings.texts.programIntro || '';
+                document.getElementById('programHeadingText').textContent = settings.texts.programHeading || '';
+                document.getElementById('educationalHoursHeadingText').textContent = settings.texts.educationalHoursHeading || '';
+                document.getElementById('recreationalHoursHeadingText').textContent = settings.texts.recreationalHoursHeading || '';
+                document.getElementById('methodologyHeadingText').textContent = settings.texts.methodologyHeading || '';
+                document.getElementById('methodologyDescriptionText').textContent = settings.texts.methodologyDescriptionText || '';
+                document.getElementById('durationTextContent').textContent = settings.texts.durationTextContent || '';
+                document.getElementById('datesTextContent').textContent = settings.texts.datesTextContent || '';
+                document.getElementById('locationTextContent').textContent = settings.texts.locationTextContent || '';
+                document.getElementById('contactPhoneDisplay').textContent = settings.texts.contactPhoneDisplay || '';
+                document.getElementById('ourGoalHeadingText').textContent = settings.texts.ourGoalHeadingText || '';
+                document.getElementById('ourGoalDescriptionText').textContent = settings.texts.ourGoalDescriptionText || '';
+                document.getElementById('limitedSeatsTextContent').textContent = settings.texts.limitedSeatsTextContent || '';
+                document.getElementById('bottomContactInfoText').textContent = settings.texts.bottomContactInfoText || '';
+                document.getElementById('bottomPhoneTextContent').textContent = settings.texts.bottomPhoneTextContent || '';
+                document.getElementById('hashtagsTextContent').textContent = settings.texts.hashtagsTextContent || '';
+
+                window.sliderPhrases = settings.texts.sliderPhrases || defaultSettings.texts.sliderPhrases;
+                renderSlides();
+            }
+        }
+
+        function loadAdminSettings() {
+            onSnapshot(adminSettingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const settings = docSnap.data();
+                    console.log("Admin settings loaded:", settings);
+                    applySettings(settings);
+                } else {
+                    console.log("No admin settings found, using default.");
+                    applySettings(defaultSettings);
+                }
+            }, (error) => {
+                console.error("Error listening to admin settings:", error);
+                showModal("حدث خطأ أثناء تحميل الإعدادات. قد لا يتم عرض الموقع بشكل صحيح.");
+            });
+        }
+
+        function getRegistrationsCollectionRef() {
+            if (!currentUserId) {
+                console.error("User ID is not available for Firestore operations.");
+                return null;
+            }
+            return collection(db, `artifacts/${appId}/public/data/registrations`);
+        }
+
+        function renderRegisteredStudents(students, targetElement) {
+            targetElement.innerHTML = '';
+            if (students.length === 0) {
+                targetElement.innerHTML = '<p class="text-gray-500">لا يوجد طلاب مسجلون حالياً.</p>';
+                return;
+            }
+
+            students.forEach(student => {
+                const studentCard = document.createElement('div');
+                studentCard.className = `student-card ${student.contacted ? 'contacted' : ''}`;
+                studentCard.innerHTML = `
+                    <h4>${escapeHtml(student.name)}</h4>
+                    <p>العمر: ${escapeHtml(student.age)}</p>
+                    <p>المستوى: ${escapeHtml(student.englishLevel)}</p>
+                    <p>القسم: ${escapeHtml(student.section)}</p>
+                    <p>هاتف ولي الأمر: <span dir="ltr">${escapeHtml(student.parentPhone)}</span></p>
+                    ${student.label ? `<span class="label-display">${escapeHtml(student.label)}</span>` : ''}
+                `;
+                targetElement.appendChild(studentCard);
+            });
+        }
+
+        function loadRegistrations() {
+            const registrationsColRef = getRegistrationsCollectionRef();
+            if (!registrationsColRef) return;
+
+            onSnapshot(registrationsColRef, (snapshot) => {
+                const registrations = [];
+                snapshot.forEach(doc => {
+                    registrations.push({ id: doc.id, ...doc.data() });
+                });
+                console.log("Registrations loaded:", registrations);
+                renderRegisteredStudents(registrations, registeredStudentsListDisplay);
+            }, (error) => {
+                console.error("Error listening to registrations:", error);
+            });
+        }
+
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target == adminLoginModal) {
+                adminLoginModal.style.display = 'none';
+            }
+        }
+
+        adminLoginBtn.addEventListener('click', () => {
+            adminLoginModal.style.display = 'flex';
+        });
+
+        closeLoginModalBtn.onclick = function() {
+            adminLoginModal.style.display = 'none';
+        }
+
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            if (username === 'admin' && password === 'password123') {
+                adminLoginModal.style.display = 'none';
+                showModal('تم تسجيل الدخول بنجاح! سيتم توجيهك إلى لوحة التحكم.');
+                window.location.href = 'dashboard.html'; // Redirect to dashboard page
+            } else {
+                showModal('اسم المستخدم أو كلمة المرور غير صحيحة.');
+            }
+        });
+
+        generateSloganBtn.addEventListener('click', async () => {
+            const keywords = sloganInput.value.trim();
+            if (!keywords) {
+                sloganOutput.innerHTML = '<span style="color: #dc2626;">الرجاء إدخال بعض الكلمات المفتاحية.</span>';
+                return;
+            }
+
+            sloganOutput.innerHTML = '<span class="loading-spinner"></span> جاري توليد الشعار...';
+            generateSloganBtn.disabled = true;
+
+            try {
+                const prompt = `Generate a catchy and inspiring slogan for an English language camp. The slogan should be short, memorable, and focused on fun, learning, and confidence. Incorporate these keywords: ${keywords}. Provide only the slogan, no extra text.`;
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    sloganOutput.textContent = text.trim();
+                } else {
+                    sloganOutput.innerHTML = '<span style="color: #dc2626;">عذرًا، لم أتمكن من توليد شعار. حاول مرة أخرى.</span>';
+                    console.error('Unexpected API response structure:', result);
+                }
+            } catch (error) {
+                sloganOutput.innerHTML = '<span style="color: #dc2626;">حدث خطأ أثناء الاتصال بالخدمة. الرجاء المحاولة لاحقًا.</span>';
+                console.error('Error generating slogan:', error);
+            } finally {
+                generateSloganBtn.disabled = false;
+            }
+        });
+
+        function renderSlides() {
+            sliderSlides.innerHTML = '';
+            sliderDots.innerHTML = '';
+            const phrasesToRender = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases : [];
+
+            phrasesToRender.forEach((phrase, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.classList.add('slide');
+                slideDiv.textContent = phrase;
+                sliderSlides.appendChild(slideDiv);
+
+                const dotSpan = document.createElement('span');
+                dotSpan.classList.add('dot');
+                dotSpan.addEventListener('click', () => showSlide(index));
+                sliderDots.appendChild(dotSpan);
+            });
+            showSlide(currentSlideIndex);
+        }
+
+        function showSlide(index) {
+            const phrasesLength = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases.length : 0;
+            if (phrasesLength === 0) return;
+
+            if (index >= phrasesLength) {
+                currentSlideIndex = 0;
+            } else if (index < 0) {
+                currentSlideIndex = phrasesLength - 1;
+            } else {
+                currentSlideIndex = index;
+            }
+
+            if (sliderSlides) {
+                sliderSlides.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+            }
+
+            const dots = document.querySelectorAll('.slider-dots .dot');
+            dots.forEach((dot, i) => {
+                if (i === currentSlideIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            showSlide(currentSlideIndex + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlideIndex - 1);
+        }
+
+        prevSlideBtn.addEventListener('click', prevSlide);
+        nextSlideBtn.addEventListener('click', nextSlide);
+
+        function startSlider() {
+            stopSlider();
+            slideInterval = setInterval(nextSlide, 5000);
+        }
+
+        function stopSlider() {
+            clearInterval(slideInterval);
+        }
+
+        window.onload = function() {
+            renderSlides();
+            startSlider();
+        };
+
+        sliderSlides.addEventListener('mouseenter', stopSlider);
+        sliderSlides.addEventListener('mouseleave', startSlider);
+    </script>
+</body>
+</html>
