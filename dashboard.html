@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلان مخيم اللغة الإنجليزية - لوحة تحكم المدير</title>
+    <!-- Visualization & Content Choices:
+        - Admin - Settings: HTML forms (text, color, textarea). Goal: Customization. Interaction: Admin input.
+        - Admin - Live Preview: iframe with postMessage updates. Goal: Feedback. Interaction: Real-time update.
+        - Admin - Student Management: HTML list/cards with buttons/selects. Goal: Management. Interaction: Admin actions (mark, label, delete).
+        - NO SVG/Mermaid used. Chart.js/Plotly.js not applicable for this report type.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --body-bg: #E6F0F5;
+            --header-gradient-start: #3F72AF;
+            --header-gradient-end: #112D4E;
+            --feature-icon-color: #3B82F6;
+            --form-submit-button-start: #3B82F6;
+            --form-submit-button-end: #2563EB;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--body-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: var(--header-gradient-end);
+            width: 100%;
+            max-width: 768px; /* Adjusted for consistency */
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .nav-button {
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .nav-button.active {
+            background-color: var(--header-gradient-start);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .page-container {
+            background-color: #ffffff;
+            border-radius: 0 0 1.5rem 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 768px; /* Adjusted for consistency */
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        .admin-dashboard-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 100%;
+        }
+        @media (min-width: 1024px) {
+            .admin-dashboard-wrapper {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+            }
+        }
+        .admin-dashboard-section {
+            display: flex; /* Always flex for dashboard page */
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1rem;
+            flex: 1;
+            min-width: 300px;
+            max-width: 45%;
+            padding: 2rem;
+            border-radius: 1rem;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .admin-dashboard-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .admin-dashboard-actions button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        .admin-dashboard-actions button:hover {
+            transform: translateY(-2px);
+        }
+        .save-button {
+            background-color: #22c55e;
+            color: white;
+        }
+        .apply-button {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .preview-screen-container {
+            display: block; /* Always block for dashboard page */
+            flex: 1;
+            min-width: 300px;
+            max-width: 45%;
+            border: 1px solid #cbd5e0;
+            border-radius: 1rem;
+            overflow: hidden;
+            background-color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            padding-top: 56.25%;
+            height: 0;
+        }
+        .preview-screen-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .preview-screen-container h4 {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            color: #334155;
+            z-index: 1;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: right;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+            font-size: 1rem;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="tel"],
+        .form-group select,
+        .form-group input[type="color"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            background-color: #ffffff;
+        }
+        .form-group input[type="color"] {
+            height: 40px;
+            padding: 0.25rem;
+        }
+        .registered-students-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .student-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: right;
+            position: relative;
+        }
+        .student-card.contacted {
+            border-left: 5px solid #10b981;
+        }
+        .student-card h4 {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #1a202c;
+        }
+        .student-card p {
+            font-size: 0.95rem;
+            color: #4a5568;
+        }
+        .student-card .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }
+        .student-card .actions button, .student-card .actions select {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .student-card .actions .toggle-contacted {
+            background-color: #3B82F6;
+            color: white;
+        }
+        .student-card .actions .toggle-contacted.contacted {
+            background-color: #10b981;
+        }
+        .student-card .actions .toggle-contacted:hover {
+            background-color: #2563EB;
+        }
+        .student-card .actions .delete-btn {
+            background-color: #ef4444;
+            color: white;
+        }
+        .student-card .actions .delete-btn:hover {
+            background-color: #dc2626;
+        }
+        .student-card .actions .label-select {
+            background-color: #e2e8f0;
+            border: 1px solid #cbd5e0;
+            color: #334155;
+        }
+        .student-card .label-display {
+            background-color: #bfdbfe;
+            color: #1e40af;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            display: inline-block;
+            align-self: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="index.html" class="nav-button">الرئيسية</a>
+        <a href="register.html" class="nav-button">التسجيل</a>
+        <a href="contact.html" class="nav-button">تواصل معنا</a>
+        <a href="dashboard.html" class="nav-button active">لوحة التحكم</a>
+    </div>
+
+    <div class="page-container">
+        <div id="adminDashboardWrapper" class="admin-dashboard-wrapper">
+            <div id="adminDashboard" class="admin-dashboard-section">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">لوحة تحكم المدير</h3>
+                <div class="form-group">
+                    <label for="logoUrlInput">رابط الشعار (URL):</label>
+                    <input type="text" id="logoUrlInput" class="w-full" placeholder="أدخل رابط الشعار هنا">
+                </div>
+                <div class="form-group">
+                    <label for="bodyBgColorInput">لون خلفية الصفحة:</label>
+                    <input type="color" id="bodyBgColorInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="headerGradientStartInput">لون بداية تدرج الهيدر:</label>
+                    <input type="color" id="headerGradientStartInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="headerGradientEndInput">لون نهاية تدرج الهيدر:</label>
+                    <input type="color" id="headerGradientEndInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="featureIconColorInput">لون أيقونات الميزات:</label>
+                    <input type="color" id="featureIconColorInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="formSubmitButtonStartInput">لون بداية زر التسجيل:</label>
+                    <input type="color" id="formSubmitButtonStartInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="formSubmitButtonEndInput">لون نهاية زر التسجيل:</label>
+                    <input type="color" id="formSubmitButtonEndInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="mainTitleInput">العنوان الرئيسي:</label>
+                    <input type="text" id="mainTitleInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="campSloganInput">شعار المخيم الرئيسي:</label>
+                    <textarea id="campSloganInput" class="w-full h-20"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="campNameInput">اسم المخيم:</label>
+                    <input type="text" id="campNameInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="registrationStatusInput">حالة التسجيل:</label>
+                    <input type="text" id="registrationStatusInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="programIntroInput">مقدمة البرنامج:</label>
+                    <textarea id="programIntroInput" class="w-full h-20"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="programHeadingInput">عنوان قسم البرنامج:</label>
+                    <input type="text" id="programHeadingInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="educationalHoursHeadingInput">عنوان ساعات التعليم:</label>
+                    <input type="text" id="educationalHoursHeadingInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="recreationalHoursHeadingInput">عنوان ساعات الترفيه:</label>
+                    <input type="text" id="recreationalHoursHeadingInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="methodologyHeadingInput">عنوان المنهج المستخدم:</label>
+                    <input type="text" id="methodologyHeadingInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="methodologyDescriptionInput">وصف المنهج:</label>
+                    <textarea id="methodologyDescriptionInput" class="w-full h-20"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="durationTextInput">نص المدة:</label>
+                    <input type="text" id="durationTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="datesTextInput">نص التواريخ:</label>
+                    <input type="text" id="datesTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="locationTextInput">نص الموقع:</label>
+                    <input type="text" id="locationTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="contactPhoneDisplayInput">نص رقم الاتصال (الرئيسي):</label>
+                    <input type="text" id="contactPhoneDisplayInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="ourGoalHeadingTextInput">عنوان هدفنا:</label>
+                    <input type="text" id="ourGoalHeadingTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="ourGoalDescriptionTextInput">وصف هدفنا:</label>
+                    <textarea id="ourGoalDescriptionTextInput" class="w-full h-20"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="limitedSeatsTextInput">نص المقاعد المحدودة:</label>
+                    <input type="text" id="limitedSeatsTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="bottomContactInfoTextInput">نص معلومات الاتصال (الأسفل):</label>
+                    <textarea id="bottomContactInfoTextInput" class="w-full h-20"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="bottomPhoneTextInput">نص الهاتف (الأسفل):</label>
+                    <input type="text" id="bottomPhoneTextInput" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="hashtagsTextInput">نص الهاشتاجات:</label>
+                    <textarea id="hashtagsTextInput" class="w-full h-20"></textarea>
+                </div>
+                <h4 class="text-lg font-bold text-gray-700 mt-4 mb-2">جمل السلايدر:</h4>
+                <div class="form-group">
+                    <label for="sliderPhrase1Input">الجملة 1:</label>
+                    <input type="text" id="sliderPhrase1Input" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="sliderPhrase2Input">الجملة 2:</label>
+                    <input type="text" id="sliderPhrase2Input" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="sliderPhrase3Input">الجملة 3:</label>
+                    <input type="text" id="sliderPhrase3Input" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="sliderPhrase4Input">الجملة 4:</label>
+                    <input type="text" id="sliderPhrase4Input" class="w-full">
+                </div>
+                <div class="form-group">
+                    <label for="sliderPhrase5Input">الجملة 5:</label>
+                    <input type="text" id="sliderPhrase5Input" class="w-full">
+                </div>
+
+                <div class="admin-dashboard-actions">
+                    <button id="applySettingsBtn" class="apply-button">تطبيق الإعدادات</button>
+                    <button id="saveSettingsBtn" class="save-button">حفظ الإعدادات</button>
+                </div>
+
+                <div class="registered-students-section mt-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">إدارة المسجلين</h3>
+                    <div id="registeredStudentsAdminList" class="registered-students-list">
+                        <p class="text-gray-500">جاري تحميل بيانات المسجلين...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="previewScreenContainer" class="preview-screen-container">
+                <h4>معاينة حية</h4>
+                <iframe id="previewIframe" srcdoc="" title="Live Preview"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modalMessage" class="text-lg font-semibold text-gray-800"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUserId = null;
+
+        const defaultSettings = {
+            logoUrl: '487167779_29373139318966172_855389515226951087_n-removebg-preview.png',
+            colors: {
+                bodyBg: '#E6F0F5',
+                headerGradientStart: '#3F72AF',
+                headerGradientEnd: '#112D4E',
+                featureIconColor: '#3B82F6',
+                formSubmitButtonStart: '#3B82F6',
+                formSubmitButtonEnd: '#2563EB'
+            },
+            texts: {
+                mainTitle: "الـ English مش لازم يكون عقدة ! 🎯",
+                campSlogan: "تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!",
+                campName: "مخيم اللغة الإنجليزية",
+                registrationStatus: "الدورة الثانية - تسجيل مفتوح الآن!",
+                programIntro: "بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.",
+                programHeading: "برنامج يومي متوازن ومصمّم بعناية:",
+                educationalHoursHeading: "🧠 3 ساعات تعليمية فعّالة:",
+                recreationalHoursHeading: "🎨 1 ساعة ترفيهية يومية:",
+                methodologyHeading: "📘 المنهج المستخدم:",
+                methodologyDescriptionText: "McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:\n(الاستماع – التحدث – القراءة – الكتابة)",
+                durationTextContent: "🗓️ المدة: 6 أسابيع متكاملة",
+                datesTextContent: "📆 من 1 يونيو إلى 15 يوليو 2025",
+                locationTextContent: "📍 الموقع: تاجوراء – خلف منتزه السندباد",
+                contactPhoneDisplay: "📞 للتسجيل والاستفسار: 0929272725",
+                ourGoalHeadingText: "🚸 هدفنا:",
+                ourGoalDescriptionText: "أن نغيّر نظرة الطفل للغة الإنجليزية،\nمن \"مادة دراسية\" إلى \"مهارة ممتعة وقوية\" يعيشها يوميًا.",
+                limitedSeatsTextContent: "📌 المقاعد محدودة لضمان الجودة... لا تتردد!",
+                bottomContactInfoText: "للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:",
+                bottomPhoneTextContent: "الهاتف: 0929272725",
+                hashtagsTextContent: "#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp",
+                sliderPhrases: [
+                    "الإنجليزية: مفتاح طفلك نحو عالم أوسع!",
+                    "اجعل تعلم الإنجليزية مغامرة ممتعة لطفلك!",
+                    "بناء الثقة في اللغة الإنجليزية، خطوة بخطوة.",
+                    "صيف مليء بالمرح والتعلم... بالإنجليزية!",
+                    "مستقبل طفلك يبدأ بإتقان الإنجليزية."
+                ]
+            }
+        };
+
+        const modal = document.getElementById('myModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeButton = document.getElementsByClassName('close-button')[0];
+        const previewIframe = document.getElementById('previewIframe');
+        const registeredStudentsAdminList = document.getElementById('registeredStudentsAdminList');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                console.log("User authenticated:", currentUserId);
+                loadAdminSettings();
+                loadRegistrations();
+            } else {
+                console.log("No user authenticated, signing in anonymously.");
+                signInAnonymously(auth).then(anonUser => {
+                    currentUserId = anonUser.user.uid;
+                    console.log("Signed in anonymously:", currentUserId);
+                    loadAdminSettings();
+                    loadRegistrations();
+                }).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    showModal("حدث خطأ في المصادقة. قد لا تعمل بعض الميزات.");
+                });
+            }
+        });
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') {
+                return unsafe;
+            }
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/`/g, '\\`')
+                .replace(/\$/g, '\\$');
+        }
+
+        const adminSettingsDocRef = doc(db, `artifacts/${appId}/public/data/admin_settings`, 'config');
+
+        function applySettings(settings) {
+            if (settings.colors) {
+                document.documentElement.style.setProperty('--body-bg', settings.colors.bodyBg);
+                document.documentElement.style.setProperty('--header-gradient-start', settings.colors.headerGradientStart);
+                document.documentElement.style.setProperty('--header-gradient-end', settings.colors.headerGradientEnd);
+                document.documentElement.style.setProperty('--feature-icon-color', settings.colors.featureIconColor);
+                document.documentElement.style.setProperty('--form-submit-button-start', settings.colors.formSubmitButtonStart);
+                document.documentElement.style.setProperty('--form-submit-button-end', settings.colors.formSubmitButtonEnd);
+            }
+
+            document.getElementById('logoUrlInput').value = settings.logoUrl || '';
+            document.getElementById('bodyBgColorInput').value = settings.colors.bodyBg || defaultSettings.colors.bodyBg;
+            document.getElementById('headerGradientStartInput').value = settings.colors.headerGradientStart || defaultSettings.colors.headerGradientStart;
+            document.getElementById('headerGradientEndInput').value = settings.colors.headerGradientEnd || defaultSettings.colors.headerGradientEnd;
+            document.getElementById('featureIconColorInput').value = settings.colors.featureIconColor || defaultSettings.colors.featureIconColor;
+            document.getElementById('formSubmitButtonStartInput').value = settings.colors.formSubmitButtonStart || defaultSettings.colors.formSubmitButtonStart;
+            document.getElementById('formSubmitButtonEndInput').value = settings.colors.formSubmitButtonEnd || defaultSettings.colors.formSubmitButtonEnd;
+
+            document.getElementById('mainTitleInput').value = settings.texts.mainTitle || '';
+            document.getElementById('campSloganInput').value = settings.texts.campSlogan || '';
+            document.getElementById('campNameInput').value = settings.texts.campName || '';
+            document.getElementById('registrationStatusInput').value = settings.texts.registrationStatus || '';
+            document.getElementById('programIntroInput').value = settings.texts.programIntro || '';
+            document.getElementById('programHeadingInput').value = settings.texts.programHeading || '';
+            document.getElementById('educationalHoursHeadingInput').value = settings.texts.educationalHoursHeading || '';
+            document.getElementById('recreationalHoursHeadingInput').value = settings.texts.recreationalHoursHeading || '';
+            document.getElementById('methodologyHeadingInput').value = settings.texts.methodologyHeading || '';
+            document.getElementById('methodologyDescriptionInput').value = settings.texts.methodologyDescriptionText || '';
+            document.getElementById('durationTextInput').value = settings.texts.durationTextContent || '';
+            document.getElementById('datesTextInput').value = settings.texts.datesTextContent || '';
+            document.getElementById('locationTextInput').value = settings.texts.locationTextContent || '';
+            document.getElementById('contactPhoneDisplayInput').value = settings.texts.contactPhoneDisplay || '';
+            document.getElementById('ourGoalHeadingTextInput').value = settings.texts.ourGoalHeadingText || '';
+            document.getElementById('ourGoalDescriptionTextInput').value = settings.texts.ourGoalDescriptionText || '';
+            document.getElementById('limitedSeatsTextInput').value = settings.texts.limitedSeatsTextContent || '';
+            document.getElementById('bottomContactInfoTextInput').value = settings.texts.bottomContactInfoText || '';
+            document.getElementById('bottomPhoneTextInput').value = settings.texts.bottomPhoneTextContent || '';
+            document.getElementById('hashtagsTextInput').value = settings.texts.hashtagsTextContent || '';
+
+            for (let i = 0; i < 5; i++) {
+                const input = document.getElementById(`sliderPhrase${i + 1}Input`);
+                if (input) {
+                    input.value = (settings.texts.sliderPhrases && settings.texts.sliderPhrases[i]) || '';
+                }
+            }
+        }
+
+        function loadAdminSettings() {
+            onSnapshot(adminSettingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const settings = docSnap.data();
+                    console.log("Admin settings loaded:", settings);
+                    applySettings(settings);
+                    sendSettingsToPreview(settings);
+                } else {
+                    console.log("No admin settings found, using default.");
+                    applySettings(defaultSettings);
+                    sendSettingsToPreview(defaultSettings);
+                }
+            }, (error) => {
+                console.error("Error listening to admin settings:", error);
+                showModal("حدث خطأ أثناء تحميل الإعدادات. قد لا يتم عرض الموقع بشكل صحيح.");
+            });
+        }
+
+        async function saveAdminSettings() {
+            const newSettings = {
+                logoUrl: document.getElementById('logoUrlInput').value,
+                colors: {
+                    bodyBg: document.getElementById('bodyBgColorInput').value,
+                    headerGradientStart: document.getElementById('headerGradientStartInput').value,
+                    headerGradientEnd: document.getElementById('headerGradientEndInput').value,
+                    featureIconColor: document.getElementById('featureIconColorInput').value,
+                    formSubmitButtonStart: document.getElementById('formSubmitButtonStartInput').value,
+                    formSubmitButtonEnd: document.getElementById('formSubmitButtonEndInput').value
+                },
+                texts: {
+                    mainTitle: document.getElementById('mainTitleInput').value,
+                    campSlogan: document.getElementById('campSloganInput').value,
+                    campName: document.getElementById('campNameInput').value,
+                    registrationStatus: document.getElementById('registrationStatusInput').value,
+                    programIntro: document.getElementById('programIntroInput').value,
+                    programHeading: document.getElementById('programHeadingInput').value,
+                    educationalHoursHeading: document.getElementById('educationalHoursHeadingInput').value,
+                    recreationalHoursHeading: document.getElementById('recreationalHoursHeadingInput').value,
+                    methodologyHeading: document.getElementById('methodologyHeadingInput').value,
+                    methodologyDescriptionText: document.getElementById('methodologyDescriptionInput').value,
+                    durationTextContent: document.getElementById('durationTextInput').value,
+                    datesTextContent: document.getElementById('datesTextInput').value,
+                    locationTextContent: document.getElementById('locationTextInput').value,
+                    contactPhoneDisplay: document.getElementById('contactPhoneDisplayInput').value,
+                    ourGoalHeadingText: document.getElementById('ourGoalHeadingTextInput').value,
+                    ourGoalDescriptionText: document.getElementById('ourGoalDescriptionTextInput').value,
+                    limitedSeatsTextContent: document.getElementById('limitedSeatsTextInput').value,
+                    bottomContactInfoText: document.getElementById('bottomContactInfoTextInput').value,
+                    bottomPhoneTextContent: document.getElementById('bottomPhoneTextInput').value,
+                    hashtagsTextContent: document.getElementById('hashtagsTextInput').value,
+                    sliderPhrases: [
+                        document.getElementById('sliderPhrase1Input').value,
+                        document.getElementById('sliderPhrase2Input').value,
+                        document.getElementById('sliderPhrase3Input').value,
+                        document.getElementById('sliderPhrase4Input').value,
+                        document.getElementById('sliderPhrase5Input').value
+                    ].filter(phrase => phrase.trim() !== '')
+                }
+            };
+
+            try {
+                await setDoc(adminSettingsDocRef, newSettings);
+                console.log("Admin settings saved successfully!");
+                showModal("تم حفظ الإعدادات بنجاح!");
+            } catch (error) {
+                console.error("Error saving admin settings:", error);
+                showModal("حدث خطأ أثناء حفظ الإعدادات.");
+            }
+        }
+
+        function applySettingsFromInputs() {
+            const currentSettings = {
+                logoUrl: document.getElementById('logoUrlInput').value,
+                colors: {
+                    bodyBg: document.getElementById('bodyBgColorInput').value,
+                    headerGradientStart: document.getElementById('headerGradientStartInput').value,
+                    headerGradientEnd: document.getElementById('headerGradientEndInput').value,
+                    featureIconColor: document.getElementById('featureIconColorInput').value,
+                    formSubmitButtonStart: document.getElementById('formSubmitButtonStartInput').value,
+                    formSubmitButtonEnd: document.getElementById('formSubmitButtonEndInput').value
+                },
+                texts: {
+                    mainTitle: document.getElementById('mainTitleInput').value,
+                    campSlogan: document.getElementById('campSloganInput').value,
+                    campName: document.getElementById('campNameInput').value,
+                    registrationStatus: document.getElementById('registrationStatusInput').value,
+                    programIntro: document.getElementById('programIntroInput').value,
+                    programHeading: document.getElementById('programHeadingInput').value,
+                    educationalHoursHeading: document.getElementById('educationalHoursHeadingInput').value,
+                    recreationalHoursHeading: document.getElementById('recreationalHoursHeadingInput').value,
+                    methodologyHeading: document.getElementById('methodologyHeadingInput').value,
+                    methodologyDescriptionText: document.getElementById('methodologyDescriptionInput').value,
+                    durationTextContent: document.getElementById('durationTextInput').value,
+                    datesTextContent: document.getElementById('datesTextInput').value,
+                    locationTextContent: document.getElementById('locationTextInput').value,
+                    contactPhoneDisplay: document.getElementById('contactPhoneDisplayInput').value,
+                    ourGoalHeadingText: document.getElementById('ourGoalHeadingTextInput').value,
+                    ourGoalDescriptionText: document.getElementById('ourGoalDescriptionTextInput').value,
+                    limitedSeatsTextContent: document.getElementById('limitedSeatsTextInput').value,
+                    bottomContactInfoText: document.getElementById('bottomContactInfoTextInput').value,
+                    bottomPhoneTextContent: document.getElementById('bottomPhoneTextInput').value,
+                    hashtagsTextContent: document.getElementById('hashtagsTextInput').value,
+                    sliderPhrases: [
+                        document.getElementById('sliderPhrase1Input').value,
+                        document.getElementById('sliderPhrase2Input').value,
+                        document.getElementById('sliderPhrase3Input').value,
+                        document.getElementById('sliderPhrase4Input').value,
+                        document.getElementById('sliderPhrase5Input').value
+                    ].filter(phrase => phrase.trim() !== '')
+                }
+            };
+            sendSettingsToPreview(currentSettings);
+        }
+
+        function sendSettingsToPreview(settings) {
+            if (previewIframe.contentWindow) {
+                previewIframe.contentWindow.postMessage({
+                    type: 'updatePreviewSettings',
+                    settings: settings
+                }, '*');
+            }
+        }
+
+        previewIframe.srcdoc = `
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>معاينة الإعلان</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+                <style>
+                    :root {
+                        --body-bg: #E6F0F5;
+                        --header-gradient-start: #3F72AF;
+                        --header-gradient-end: #112D4E;
+                        --feature-icon-color: #3B82F6;
+                        --form-submit-button-start: #3B82F6;
+                        --form-submit-button-end: #2563EB;
+                    }
+                    body {
+                        font-family: 'Cairo', sans-serif;
+                        background-color: var(--body-bg);
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-start;
+                        min-height: 100vh;
+                        padding: 10px;
+                        overflow-y: auto;
+                    }
+                    .ad-container {
+                        background-color: #ffffff;
+                        border-radius: 0.75rem;
+                        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+                        max-width: 300px;
+                        width: 100%;
+                        overflow: hidden;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        transform: scale(0.9);
+                        transform-origin: top center;
+                    }
+                    .header-bg {
+                        background: linear-gradient(to right, var(--header-gradient-start), var(--header-gradient-end));
+                        padding: 1rem 1rem;
+                        color: white;
+                        position: relative;
+                        overflow: hidden;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                    }
+                    .header-bg::before {
+                        content: '';
+                        position: absolute;
+                        top: -50%;
+                        left: -50%;
+                        width: 200%;
+                        height: 200%;
+                        background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+                        animation: pulse-light 5s infinite ease-in-out;
+                    }
+                    @keyframes pulse-light {
+                        0% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+                        50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+                        100% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+                    }
+                    .content-section {
+                        padding: 1rem 1rem;
+                        font-size: 0.8rem;
+                    }
+                    .cta-button {
+                        background: linear-gradient(to right, #10b981, #059669);
+                        color: white;
+                        padding: 0.5rem 1rem;
+                        border-radius: 0.5rem;
+                        font-weight: 700;
+                        font-size: 0.9rem;
+                        display: inline-block;
+                        margin-top: 1rem;
+                    }
+                    .feature-item {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: flex-end;
+                        gap: 0.5rem;
+                        margin-bottom: 0.5rem;
+                        font-size: 0.8rem;
+                        color: #4b5563;
+                        text-align: right;
+                    }
+                    .feature-icon {
+                        color: var(--feature-icon-color);
+                        font-size: 1.2rem;
+                        flex-shrink: 0;
+                    }
+                    .school-logo {
+                        width: 80px;
+                        height: auto;
+                        margin-bottom: 0.5rem;
+                        display: block;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .slider-container {
+                        position: relative;
+                        width: 100%;
+                        height: 100px;
+                        overflow: hidden;
+                        border-radius: 0.75rem 0.75rem 0 0;
+                    }
+                    .slides {
+                        display: flex;
+                        transition: transform 0.5s ease-in-out;
+                        height: 100%;
+                    }
+                    .slide {
+                        min-width: 100%;
+                        height: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        padding: 0.5rem;
+                        text-align: center;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        color: white;
+                        background: linear-gradient(to right, var(--header-gradient-start), var(--header-gradient-end));
+                        border-radius: 0.5rem;
+                    }
+                    .slider-nav-btn, .slider-dots {
+                        display: none;
+                    }
+                    h1, h2, h3, p {
+                        line-height: normal;
+                    }
+                    .registration-form-section, .slogan-generator-section {
+                        padding: 1rem;
+                        margin-top: 1.5rem;
+                    }
+                    .form-group label, .form-group input, .form-group select, .form-group textarea {
+                        font-size: 0.8rem;
+                        padding: 0.5rem;
+                    }
+                    .form-submit-button {
+                        padding: 0.5rem 1rem;
+                        font-size: 0.9rem;
+                    }
+                    @media (min-width: 640px) {
+                        .header-bg {
+                            border-top-right-radius: 0.75rem;
+                            border-bottom-right-radius: 0.75rem;
+                            border-top-left-radius: 0;
+                            border-bottom-left-radius: 0;
+                        }
+                        .content-section {
+                            border-top-left-radius: 0.75rem;
+                            border-bottom-left-radius: 0.75rem;
+                            border-top-right-radius: 0;
+                            border-bottom-right-radius: 0;
+                        }
+                        .slider-container {
+                            border-radius: 0.75rem 0 0 0;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="ad-container">
+                    <div class="slider-container rounded-t-2xl">
+                        <div class="slides" id="sliderSlidesPreview">
+                            </div>
+                    </div>
+                    <div class="header-bg">
+                        <img id="schoolLogoPreview" src="" alt="شعار مدارس الأكاديمية" class="school-logo">
+                        <h1 class="text-xl font-extrabold mb-2" id="mainTitleTextPreview"></h1>
+                        <p class="text-base font-semibold mb-1" id="campSloganTextPreview"></p>
+                        <p class="text-sm font-medium" id="campNameTextPreview"></p>
+                        <p class="text-sm font-medium" id="registrationStatusTextPreview"></p>
+                    </div>
+                    <div class="content-section">
+                        <h2 class="text-lg font-bold text-gray-800 mb-3" id="programHeadingTextPreview"></h2>
+                        <p class="text-gray-600 mb-2" id="programIntroTextPreview"></p>
+                        <div class="text-right mb-4">
+                            <p class="text-gray-700 font-bold text-base mb-2" id="educationalHoursHeadingTextPreview"></p>
+                            <ul class="list-none pr-0">
+                                <li class="feature-item"><span class="feature-icon">🗣️</span><span id="eduFeature1Preview">محادثة حقيقية مع مدرسين محترفين</span></li>
+                                <li class="feature-item"><span class="feature-icon">✍️</span><span id="eduFeature2Preview">أنشطة قراءة وكتابة وفق منهج McMillion الدولي</span></li>
+                                <li class="feature-item"><span class="feature-icon">🎲</span><span id="eduFeature3Preview">ألعاب تعليمية تحفّز التفاعل وتنمّي الثقة</span></li>
+                            </ul>
+                        </div>
+                        <div class="text-right mb-4">
+                            <p class="text-gray-700 font-bold text-base mb-2" id="recreationalHoursHeadingTextPreview"></p>
+                            <ul class="list-none pr-0">
+                                <li class="feature-item"><span class="feature-icon">🏊</span><span id="recFeature1Preview">أيام سباحة مرحة</span></li>
+                                <li class="feature-item"><span class="feature-icon">🖌️</span><span id="recFeature2Preview">ورش فنية وإبداعية</span></li>
+                                <li class="feature-item"><span class="feature-icon">🎬</span><span id="recFeature3Preview">عروض سينما تعليمية</span></li>
+                                <li class="feature-item"><span class="feature-icon">🤝</span><span id="recFeature4Preview">ألعاب جماعية لتعزيز روح الفريق</span></li>
+                            </ul>
+                        </div>
+                        <div class="text-right mb-4">
+                            <h3 class="text-base font-bold text-gray-800 mb-2" id="methodologyHeadingTextPreview"></h3>
+                            <p class="text-gray-600" id="methodologyDescriptionTextPreview"></p>
+                        </div>
+                        <div class="text-right mb-4">
+                            <p class="text-gray-700 font-bold text-base mb-1" id="durationTextContentPreview"></p>
+                            <p class="text-gray-700 font-bold text-base mb-1" id="datesTextContentPreview"></p>
+                            <p class="text-gray-700 font-bold text-base mb-1" id="locationTextContentPreview"></p>
+                            <p class="text-gray-700 font-bold text-base mb-1" id="contactPhoneDisplayPreview"></p>
+                        </div>
+                        <div class="text-right mb-4">
+                            <h3 class="text-base font-bold text-gray-800 mb-2" id="ourGoalHeadingTextPreview"></h3>
+                            <p class="text-gray-600" id="ourGoalDescriptionTextPreview"></p>
+                        </div>
+                        <p class="text-gray-700 font-semibold mb-2 text-base" id="limitedSeatsTextContentPreview"></p>
+                        <a href="register.html" class="cta-button">سجل الآن!</a>
+                        <div class="mt-4 text-gray-500 text-xs">
+                            <p id="bottomContactInfoTextPreview"></p>
+                            <p id="bottomPhoneTextContentPreview"></p>
+                            <p id="hashtagsTextContentPreview"></p>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    function escapeHtml(unsafe) {
+                        if (typeof unsafe !== 'string') {
+                            return unsafe;
+                        }
+                        return unsafe
+                            .replace(/&/g, "&amp;")
+                            .replace(/</g, "&lt;")
+                            .replace(/>/g, "&gt;")
+                            .replace(/"/g, "&quot;")
+                            .replace(/'/g, "&#039;");
+                    }
+
+                    window.addEventListener('message', (event) => {
+                        if (event.data && event.data.type === 'updatePreviewSettings') {
+                            const settings = event.data.settings;
+                            const root = document.documentElement;
+
+                            root.style.setProperty('--body-bg', settings.colors.bodyBg);
+                            root.style.setProperty('--header-gradient-start', settings.colors.headerGradientStart);
+                            root.style.setProperty('--header-gradient-end', settings.colors.headerGradientEnd);
+                            root.style.setProperty('--feature-icon-color', settings.colors.featureIconColor);
+                            root.style.setProperty('--form-submit-button-start', settings.colors.formSubmitButtonStart);
+                            root.style.setProperty('--form-submit-button-end', settings.colors.formSubmitButtonEnd);
+
+                            document.getElementById('schoolLogoPreview').src = settings.logoUrl;
+
+                            document.getElementById('mainTitleTextPreview').textContent = settings.texts.mainTitle || '';
+                            document.getElementById('campSloganTextPreview').textContent = settings.texts.campSlogan || '';
+                            document.getElementById('campNameTextPreview').textContent = settings.texts.campName || '';
+                            document.getElementById('registrationStatusTextPreview').textContent = settings.texts.registrationStatus || '';
+                            document.getElementById('programIntroTextPreview').textContent = settings.texts.programIntro || '';
+                            document.getElementById('programHeadingTextPreview').textContent = settings.texts.programHeading || '';
+                            document.getElementById('educationalHoursHeadingTextPreview').textContent = settings.texts.educationalHoursHeading || '';
+                            document.getElementById('recreationalHoursHeadingTextPreview').textContent = settings.texts.recreationalHoursHeading || '';
+                            document.getElementById('methodologyHeadingTextPreview').textContent = settings.texts.methodologyHeading || '';
+                            document.getElementById('methodologyDescriptionTextPreview').textContent = settings.texts.methodologyDescriptionText || '';
+                            document.getElementById('durationTextContentPreview').textContent = settings.texts.durationTextContent || '';
+                            document.getElementById('datesTextContentPreview').textContent = settings.texts.datesTextContent || '';
+                            document.getElementById('locationTextContentPreview').textContent = settings.texts.locationTextContent || '';
+                            document.getElementById('contactPhoneDisplayPreview').textContent = settings.texts.contactPhoneDisplay || '';
+                            document.getElementById('ourGoalHeadingTextPreview').textContent = settings.texts.ourGoalHeadingText || '';
+                            document.getElementById('ourGoalDescriptionTextPreview').textContent = settings.texts.ourGoalDescriptionText || '';
+                            document.getElementById('limitedSeatsTextContentPreview').textContent = settings.texts.limitedSeatsTextContent || '';
+                            document.getElementById('bottomContactInfoTextPreview').textContent = settings.texts.bottomContactInfoText || '';
+                            document.getElementById('bottomPhoneTextContentPreview').textContent = settings.texts.bottomPhoneTextContent || '';
+                            document.getElementById('hashtagsTextContentPreview').textContent = settings.texts.hashtagsTextContent || '';
+
+                            const sliderSlidesPreview = document.getElementById('sliderSlidesPreview');
+                            sliderSlidesPreview.innerHTML = '';
+                            const phrases = settings.texts.sliderPhrases && Array.isArray(settings.texts.sliderPhrases) ? settings.texts.sliderPhrases : [];
+                            phrases.forEach(phrase => {
+                                const slideDiv = document.createElement('div');
+                                slideDiv.classList.add('slide');
+                                slideDiv.textContent = phrase;
+                                sliderSlidesPreview.appendChild(slideDiv);
+                            });
+
+                            if (phrases.length > 0) {
+                                window.currentSlideIndex = 0;
+                                showSlide(0);
+                                clearInterval(window.slideInterval);
+                                window.slideInterval = setInterval(() => showSlide(window.currentSlideIndex + 1), 3000);
+                            } else {
+                                clearInterval(window.slideInterval);
+                                sliderSlidesPreview.innerHTML = '<div class="slide">لا توجد جمل لعرضها</div>';
+                            }
+                        }
+                    });
+
+                    window.currentSlideIndex = 0;
+                    window.slideInterval = null;
+
+                    function showSlide(index) {
+                        const sliderSlidesPreview = document.getElementById('sliderSlidesPreview');
+                        const phrases = Array.from(sliderSlidesPreview.children).map(child => child.textContent);
+                        if (phrases.length === 0) return;
+
+                        if (index >= phrases.length) {
+                            window.currentSlideIndex = 0;
+                        } else if (index < 0) {
+                            window.currentSlideIndex = phrases.length - 1;
+                        } else {
+                            window.currentSlideIndex = index;
+                        }
+                        sliderSlidesPreview.style.transform = `translateX(-${window.currentSlideIndex * 100}%)`;
+                    }
+
+                    showSlide(0);
+                </script>
+            </body>
+            </html>
+        `;
+
+        function getRegistrationsCollectionRef() {
+            if (!currentUserId) {
+                console.error("User ID is not available for Firestore operations.");
+                return null;
+            }
+            return collection(db, `artifacts/${appId}/public/data/registrations`);
+        }
+
+        function renderRegisteredStudents(students, targetElement) {
+            targetElement.innerHTML = '';
+            if (students.length === 0) {
+                targetElement.innerHTML = '<p class="text-gray-500">لا يوجد طلاب مسجلون حالياً.</p>';
+                return;
+            }
+
+            students.forEach(student => {
+                const studentCard = document.createElement('div');
+                studentCard.className = `student-card ${student.contacted ? 'contacted' : ''}`;
+                studentCard.innerHTML = `
+                    <h4>${escapeHtml(student.name)}</h4>
+                    <p>العمر: ${escapeHtml(student.age)}</p>
+                    <p>المستوى: ${escapeHtml(student.englishLevel)}</p>
+                    <p>القسم: ${escapeHtml(student.section)}</p>
+                    <p>هاتف ولي الأمر: <span dir="ltr">${escapeHtml(student.parentPhone)}</span></p>
+                    ${student.label ? `<span class="label-display">${escapeHtml(student.label)}</span>` : ''}
+                    <div class="actions">
+                        <button class="toggle-contacted ${student.contacted ? 'contacted' : ''}" data-id="${student.id}" data-contacted="${student.contacted}">
+                            ${student.contacted ? 'تم التواصل ✅' : 'لم يتم التواصل ❌'}
+                        </button>
+                        <select class="label-select" data-id="${student.id}">
+                            <option value="">اختر تصنيف</option>
+                            <option value="مهتم" ${student.label === 'مهتم' ? 'selected' : ''}>مهتم</option>
+                            <option value="تم الدفع" ${student.label === 'تم الدفع' ? 'selected' : ''}>تم الدفع</option>
+                            <option value="لم يتم الرد" ${student.label === 'لم يتم الرد' ? 'selected' : ''}>لم يتم الرد</option>
+                            <option value="ملغي" ${student.label === 'ملغي' ? 'selected' : ''}>ملغي</option>
+                        </select>
+                        <button class="delete-btn" data-id="${student.id}">حذف</button>
+                    </div>
+                `;
+                targetElement.appendChild(studentCard);
+            });
+
+            targetElement.querySelectorAll('.toggle-contacted').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    const contacted = e.target.dataset.contacted === 'true';
+                    const regDocRef = doc(getRegistrationsCollectionRef(), id);
+                    await updateDoc(regDocRef, { contacted: !contacted });
+                });
+            });
+
+            targetElement.querySelectorAll('.label-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    const id = e.target.dataset.id;
+                    const label = e.target.value;
+                    const regDocRef = doc(getRegistrationsCollectionRef(), id);
+                    await updateDoc(regDocRef, { label: label });
+                });
+            });
+
+            targetElement.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const id = e.target.dataset.id;
+                    const regDocRef = doc(getRegistrationsCollectionRef(), id);
+                    if (confirm('هل أنت متأكد من حذف هذا التسجيل؟')) {
+                        await deleteDoc(regDocRef);
+                    }
+                });
+            });
+        }
+
+
+        function loadRegistrations() {
+            const registrationsColRef = getRegistrationsCollectionRef();
+            if (!registrationsColRef) return;
+
+            onSnapshot(registrationsColRef, (snapshot) => {
+                const registrations = [];
+                snapshot.forEach(doc => {
+                    registrations.push({ id: doc.id, ...doc.data() });
+                });
+                console.log("Registrations loaded:", registrations);
+                renderRegisteredStudents(registrations, registeredStudentsAdminList);
+            }, (error) => {
+                console.error("Error listening to registrations:", error);
+            });
+        }
+
+
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveAdminSettings);
+        document.getElementById('applySettingsBtn').addEventListener('click', applySettingsFromInputs);
+
+        document.querySelectorAll('#adminDashboard input, #adminDashboard textarea, #adminDashboard select').forEach(input => {
+            input.addEventListener('input', () => {
+                const currentSettings = {
+                    logoUrl: document.getElementById('logoUrlInput').value,
+                    colors: {
+                        bodyBg: document.getElementById('bodyBgColorInput').value,
+                        headerGradientStart: document.getElementById('headerGradientStartInput').value,
+                        headerGradientEnd: document.getElementById('headerGradientEndInput').value,
+                        featureIconColor: document.getElementById('featureIconColorInput').value,
+                        formSubmitButtonStart: document.getElementById('formSubmitButtonStartInput').value,
+                        formSubmitButtonEnd: document.getElementById('formSubmitButtonEndInput').value
+                    },
+                    texts: {
+                        mainTitle: document.getElementById('mainTitleInput').value,
+                        campSlogan: document.getElementById('campSloganInput').value,
+                        campName: document.getElementById('campNameInput').value,
+                        registrationStatus: document.getElementById('registrationStatusInput').value,
+                        programIntro: document.getElementById('programIntroInput').value,
+                        programHeading: document.getElementById('programHeadingInput').value,
+                        educationalHoursHeading: document.getElementById('educationalHoursHeadingInput').value,
+                        recreationalHoursHeading: document.getElementById('recreationalHoursHeadingInput').value,
+                        methodologyHeading: document.getElementById('methodologyHeadingInput').value,
+                        methodologyDescriptionText: document.getElementById('methodologyDescriptionInput').value,
+                        durationTextContent: document.getElementById('durationTextInput').value,
+                        datesTextContent: document.getElementById('datesTextInput').value,
+                        locationTextContent: document.getElementById('locationTextInput').value,
+                        contactPhoneDisplay: document.getElementById('contactPhoneDisplayInput').value,
+                        ourGoalHeadingText: document.getElementById('ourGoalHeadingTextInput').value,
+                        ourGoalDescriptionText: document.getElementById('ourGoalDescriptionTextInput').value,
+                        limitedSeatsTextContent: document.getElementById('limitedSeatsTextInput').value,
+                        bottomContactInfoText: document.getElementById('bottomContactInfoTextInput').value,
+                        bottomPhoneTextContent: document.getElementById('bottomPhoneTextInput').value,
+                        hashtagsTextContent: document.getElementById('hashtagsTextInput').value,
+                        sliderPhrases: [
+                            document.getElementById('sliderPhrase1Input').value,
+                            document.getElementById('sliderPhrase2Input').value,
+                            document.getElementById('sliderPhrase3Input').value,
+                            document.getElementById('sliderPhrase4Input').value,
+                            document.getElementById('sliderPhrase5Input').value
+                        ].filter(phrase => phrase.trim() !== '')
+                    }
+                };
+                sendSettingsToPreview(currentSettings);
+            });
+        });
+
+        // Initial population of slider phrase inputs in dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            for (let i = 0; i < 5; i++) {
+                const input = document.getElementById(`sliderPhrase${i + 1}Input`);
+                if (input) {
+                    input.value = defaultSettings.texts.sliderPhrases[i] || '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
