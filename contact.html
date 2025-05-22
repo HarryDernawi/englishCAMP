@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلان مخيم اللغة الإنجليزية - تواصل معنا</title>
+    <!-- Visualization & Content Choices:
+        - Contact Info: HTML text. Goal: Inform. Interaction: None.
+        - NO SVG/Mermaid used. Chart.js/Plotly.js not applicable for this report type.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --body-bg: #E6F0F5;
+            --header-gradient-start: #3F72AF;
+            --header-gradient-end: #112D4E;
+            --feature-icon-color: #3B82F6;
+            --form-submit-button-start: #3B82F6;
+            --form-submit-button-end: #2563EB;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--body-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .navbar {
+            background-color: var(--header-gradient-end);
+            width: 100%;
+            max-width: 768px;
+            border-radius: 1.5rem 1.5rem 0 0;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .nav-button {
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .nav-button.active {
+            background-color: var(--header-gradient-start);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .page-container {
+            background-color: #ffffff;
+            border-radius: 0 0 1.5rem 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 768px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        .contact-section {
+            background-color: #f8fafc;
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: #334155;
+        }
+        .contact-icon {
+            font-size: 1.5rem;
+            color: var(--feature-icon-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="index.html" class="nav-button">الرئيسية</a>
+        <a href="register.html" class="nav-button">التسجيل</a>
+        <a href="contact.html" class="nav-button active">تواصل معنا</a>
+    </div>
+
+    <div class="page-container">
+        <div class="contact-section">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">تواصل معنا</h3>
+            <div class="contact-item">
+                <span class="contact-icon">📞</span>
+                <p>للتسجيل والاستفسار: <span dir="ltr">0929272725</span></p>
+            </div>
+            <div class="contact-item">
+                <span class="contact-icon">📍</span>
+                <p>الموقع: تاجوراء – خلف منتزه السندباد</p>
+            </div>
+            <p class="text-gray-600 mt-8">نسعد بتواصلكم معنا في أي وقت للإجابة على استفساراتكم!</p>
+        </div>
+    </div>
+</body>
+</html>
