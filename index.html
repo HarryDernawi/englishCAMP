@@ -3,311 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعلان مخيم اللغة الإنجليزية</title>
+    <title>إعلان مخيم اللغة الإنجليزية الفاخر</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
+        /* Modern & Luxurious Color Palette (Lighter Version) */
         :root {
-            --body-bg: #E6F0F5;
-            --header-gradient-start: #3F72AF;
-            --header-gradient-end: #112D4E;
-            --feature-icon-color: #3B82F6;
-            --form-submit-button-start: #3B82F6;
-            --form-submit-button-end: #2563EB;
+            --primary-light-blue: #E0F2F7; /* Very light blue, almost white */
+            --secondary-off-white: #FDFDFD; /* Off-white for backgrounds */
+            --accent-gold: #D4AF37; /* Subtle Gold/Bronze */
+            --text-dark: #334155; /* Dark grey-blue for readability */
+            --header-dark-blue: #2C5F8A; /* A slightly darker blue for the navbar and section titles */
+            --cta-green-light: #2ECC71; /* A slightly lighter green for CTA */
+            --cta-green-dark: #27AE60; /* Darker green for CTA hover */
+
+            --shadow-light: rgba(0, 0, 0, 0.03); /* Even softer shadow */
+            --shadow-medium: rgba(0, 0, 0, 0.07); /* Even softer shadow */
+            --shadow-strong: rgba(0, 0, 0, 0.12); /* Even softer shadow */
         }
 
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: var(--body-bg);
+            background-color: var(--secondary-off-white);
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
             min-height: 100vh;
-            padding: 10px;
+            padding: 0;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--header-dark-blue);
         }
         .navbar {
-            background-color: var(--header-gradient-end);
+            background-color: var(--header-dark-blue);
             width: 100%;
-            max-width: 900px;
-            border-radius: 1.5rem 1.5rem 0 0;
-            padding: 1rem;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 15px var(--shadow-strong);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-radius: 0;
+        }
+        .nav-items-wrapper {
             display: flex;
             justify-content: space-around;
             align-items: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 50;
+            width: 100%;
+            max-width: 900px;
         }
         .nav-button {
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
             font-weight: 600;
-            transition: background-color 0.2s ease, transform 0.2s ease;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
             text-decoration: none;
-        }
-        .nav-button:hover {
-            background-color: rgba(255,255,255,0.2);
-            transform: translateY(-2px);
-        }
-        .nav-button.active {
-            background-color: var(--header-gradient-start);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .ad-container {
-            background-color: #ffffff;
-            border-radius: 0 0 1.5rem 1.5rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            max-width: 900px;
-            width: 100%;
-            overflow: hidden;
-            text-align: center;
-            padding: 1.5rem 2rem 2.5rem;
-        }
-        .header-bg {
-            background: linear-gradient(to right, var(--header-gradient-start), var(--header-gradient-end));
-            padding: 2rem 1.5rem;
-            color: white;
             position: relative;
             overflow: hidden;
-            border-radius: 1.5rem;
-            margin-bottom: 2rem;
         }
-        .header-bg::before {
+        .nav-button::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-            animation: pulse-light 5s infinite ease-in-out;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            transform: skewX(-20deg);
         }
-        @keyframes pulse-light {
-            0% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
-            50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
-            100% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+        .nav-button:hover::before {
+            left: 100%;
         }
-        .school-logo {
-            width: 100px;
-            height: auto;
-            margin-bottom: 1rem;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            cursor: pointer; /* Added for visual feedback that it's clickable */
+        .nav-button:hover {
+            background-color: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px var(--shadow-medium);
         }
-        .content-section {
-            padding: 0 1.5rem;
-            text-align: right;
+        .nav-button.active {
+            background-color: var(--accent-gold);
+            box-shadow: 0 2px 5px var(--shadow-strong);
+            color: var(--header-dark-blue); /* Dark text on gold */
         }
-        .feature-item {
+
+        /* Hero Section */
+        .hero-section {
+            width: 100%;
+            min-height: 70vh;
+            background-image: url('https://placehold.co/1920x1080/E0F2F7/334155?text=Premium+Learning+Experience'); /* Lighter Placeholder */
+            background-size: cover;
+            background-position: center;
             display: flex;
-            align-items: flex-start;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-            color: #4b5563;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 4rem 2rem;
+            color: var(--text-dark);
+            overflow: hidden;
         }
-        .feature-icon {
-            color: var(--feature-icon-color);
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(224, 242, 247, 0.7), rgba(224, 242, 247, 0.5)); /* Lighter overlay */
+            z-index: 1;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            animation: fadeInScale 1s ease-out forwards;
+        }
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            color: var(--header-dark-blue); /* Darker text for contrast */
+            text-shadow: 2px 2px 4px var(--shadow-light);
+        }
+        .hero-content p {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+        .hero-content .camp-status {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 2rem;
+            animation: pulseText 2s infinite ease-in-out;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulseText {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* General Section Styling */
+        .section-container {
+            background-color: var(--secondary-off-white);
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 30px var(--shadow-light);
+            max-width: 900px;
+            width: 100%;
+            margin: 3rem auto;
+            padding: 3rem;
+            text-align: right;
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            color: var(--header-dark-blue);
+            position: relative;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 50%;
+            transform: translateX(50%);
+            width: 80px;
+            height: 4px;
+            background-color: var(--accent-gold);
+            border-radius: 2px;
+        }
+
+        /* Program Sections */
+        .program-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        @media (min-width: 768px) {
+            .program-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .program-card {
+            background-color: var(--primary-light-blue); /* Lighter card background */
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 8px 15px var(--shadow-light);
+            text-align: right;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .program-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px var(--shadow-medium);
+        }
+        .program-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--header-dark-blue);
+        }
+        .program-card ul {
+            list-style: none;
+            padding-right: 0;
+        }
+        .program-card .feature-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align text to right, icon to left in RTL */
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+        }
+        .program-card .feature-icon {
+            color: var(--accent-gold);
             font-size: 1.8rem;
             flex-shrink: 0;
         }
+
+        /* Methodology Section */
+        .methodology-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        /* Key Info Section */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            text-align: center;
+        }
+        @media (min-width: 640px) {
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (min-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+            }
+        }
+        .info-item {
+            background-color: var(--primary-light-blue); /* Lighter info item background */
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 4px 8px var(--shadow-light);
+            font-weight: 600;
+            color: var(--header-dark-blue);
+            transition: transform 0.2s ease;
+        }
+        .info-item:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Our Goal Section */
+        .goal-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-dark);
+            text-align: center;
+        }
+
+        /* Call to Action Button */
         .cta-button {
-            background: linear-gradient(to right, var(--form-submit-button-start), var(--form-submit-button-end));
+            background: linear-gradient(to right, var(--cta-green-light), var(--cta-green-dark)); /* Lighter green gradient */
             color: white;
-            padding: 1rem 2.5rem;
+            padding: 1.2rem 3rem;
             border-radius: 0.75rem;
             font-weight: 700;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             display: inline-block;
             margin-top: 2rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 8px 20px var(--shadow-medium);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
         }
         .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 25px var(--shadow-strong);
         }
+
+        /* Footer */
         .footer-info {
+            background-color: var(--header-dark-blue);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
             margin-top: 3rem;
-            color: #6b7280;
+            width: 100%;
+            text-align: center;
             font-size: 0.9rem;
             line-height: 1.6;
+            border-radius: 0;
         }
+        .footer-info p {
+            margin-bottom: 0.5rem;
+        }
+        .footer-info a {
+            color: var(--accent-gold);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .footer-info a:hover {
+            color: white;
+        }
+
+        /* Slider Specific Styles (Enhanced & Lighter) */
         .slider-container {
             position: relative;
             width: 100%;
             max-width: 700px;
             margin: 2rem auto;
             overflow: hidden;
-            border-radius: 1rem;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15); /* Enhanced shadow */
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 15px var(--shadow-medium); /* Softer shadow */
+            background-color: var(--secondary-off-white); /* Lighter background for container */
         }
         .slides {
             display: flex;
-            transition: transform 0.5s ease-in-out;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         .slide {
             min-width: 100%;
             box-sizing: border-box;
-            padding: 2rem;
-            background: linear-gradient(to bottom right, #e0f2fe, #bfdbfe); /* Gradient background */
-            color: #1e40af;
-            font-size: 1.5rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(to bottom right, #F0F8FF, #E6F3FF); /* Very light, subtle gradient */
+            color: var(--header-dark-blue); /* Darker text for contrast */
+            font-size: 1.8rem;
             font-weight: 700;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 150px;
-            border-radius: 1rem;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05); /* Inner shadow for depth */
+            height: 200px;
+            border-radius: 1.5rem;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.02); /* Even more subtle inner shadow */
         }
         .slider-nav-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background-color: rgba(0,0,0,0.6); /* Slightly darker background */
-            color: white;
+            background-color: rgba(0,0,0,0.2); /* Very light transparent background */
+            color: var(--header-dark-blue); /* Darker arrows */
             border: none;
-            padding: 0.75rem 0.5rem;
+            padding: 1rem 0.75rem;
             cursor: pointer;
             z-index: 10;
-            font-size: 1.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Added transitions */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Added shadow */
+            font-size: 2rem;
+            border-radius: 0.75rem;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 8px var(--shadow-medium); /* Softer shadow */
         }
         .slider-nav-btn:hover {
-            background-color: rgba(0,0,0,0.8);
-            transform: translateY(-50%) scale(1.05); /* Slight scale on hover */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            background-color: rgba(0,0,0,0.3); /* Slightly darker on hover */
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 4px 12px var(--shadow-strong);
         }
         .prev-btn {
-            right: 10px;
+            right: 20px;
         }
         .next-btn {
-            left: 10px;
+            left: 20px;
         }
         .slider-dots {
             display: flex;
             justify-content: center;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
         .dot {
-            height: 12px; /* Slightly larger dots */
-            width: 12px; /* Slightly larger dots */
-            margin: 0 6px; /* Increased margin */
-            background-color: #bbb;
+            height: 14px;
+            width: 14px;
+            margin: 0 8px;
+            background-color: #D1D5DB; /* Lighter default dot */
             border-radius: 50%;
             display: inline-block;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
-            border: 2px solid transparent; /* Border for active state */
+            border: 3px solid transparent;
         }
         .dot.active {
-            background-color: var(--header-gradient-start);
-            transform: scale(1.2); /* Scale active dot */
-            border-color: white; /* White border for active dot */
-            box-shadow: 0 0 5px var(--header-gradient-start); /* Glow for active dot */
+            background-color: var(--accent-gold);
+            transform: scale(1.3);
+            border-color: var(--header-dark-blue); /* Dark border for active dot */
+            box-shadow: 0 0 6px var(--accent-gold); /* Softer glow */
+        }
+
+        /* Testimonial Section */
+        .testimonial-card {
+            background-color: var(--primary-light-blue); /* Lighter testimonial card */
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 8px 15px var(--shadow-light);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .testimonial-card p {
+            font-style: italic;
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+        .testimonial-card .author {
+            font-weight: 700;
+            color: var(--header-dark-blue);
+        }
+        .testimonial-card .rating {
+            color: var(--accent-gold);
+            font-size: 1.2rem;
+        }
+
+        /* Scroll Reveal Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <a href="index.html" class="nav-button active">الرئيسية</a>
-        <a href="register.html" class="nav-button">التسجيل</a>
-        <a href="contact.html" class="nav-button">تواصل معنا</a>
-        <a href="https://www.facebook.com/AcademySchools.ly" target="_blank" class="nav-button">فيسبوك</a>
+        <div class="nav-items-wrapper">
+            <a href="index.html" class="nav-button active">الرئيسية</a>
+            <a href="register.html" class="nav-button">التسجيل</a>
+            <a href="contact.html" class="nav-button">تواصل معنا</a>
+            <a href="https://www.facebook.com/AcademySchools.ly" target="_blank" class="nav-button">فيسبوك</a>
+        </div>
     </div>
 
-    <div class="ad-container">
-        <div class="header-bg">
+    <section class="hero-section">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
             <a href="index.html">
                 <img id="schoolLogo" src="https://storage.googleapis.com/gemini-generated-images-prod/images/487167779_29373139318966172_855389515226951087_n-removebg-preview.png-eceb72d9-53f1-4e83-8187b6db22cc" alt="شعار مدارس الأكاديمية" class="school-logo" onerror="this.onerror=null;this.src='https://placehold.co/100x100/A0AEC0/FFFFFF?text=Logo';">
             </a>
-            <h1 class="text-3xl font-extrabold mb-3" id="mainTitleText">الـ English مش لازم يكون عقدة ! 🎯</h1>
-            <p class="text-xl font-semibold mb-2" id="campSloganText">تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!</p>
-            <p class="text-lg font-medium" id="campNameText">مخيم اللغة الإنجليزية</p>
-            <p class="text-lg font-medium" id="registrationStatusText">الدورة الثانية - تسجيل مفتوح الآن!</p>
-        </div>
-
-        <div class="slider-container">
-            <div class="slides" id="sliderSlides">
-                <div class="slide">الإنجليزية: مفتاح طفلك نحو عالم أوسع!</div>
-                <div class="slide">اجعل تعلم الإنجليزية مغامرة ممتعة لطفلك!</div>
-                <div class="slide">بناء الثقة في اللغة الإنجليزية، خطوة بخطوة.</div>
-                <div class="slide">صيف مليء بالمرح والتعلم... بالإنجليزية!</div>
-                <div class="slide">مستقبل طفلك يبدأ بإتقان الإنجليزية.</div>
-            </div>
-            <button class="slider-nav-btn prev-btn" id="prevBtn">❮</button>
-            <button class="slider-nav-btn next-btn" id="nextBtn">❯</button>
-            <div class="slider-dots" id="sliderDots">
-                <span class="dot active" data-slide="0"></span>
-                <span class="dot" data-slide="1"></span>
-                <span class="dot" data-slide="2"></span>
-                <span class="dot" data-slide="3"></span>
-                <span class="dot" data-slide="4"></span>
-            </div>
-        </div>
-
-        <div class="content-section">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="programHeadingText">برنامج يومي متوازن ومصمّم بعناية:</h2>
-            <p class="text-gray-600 mb-6" id="programIntroText">بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.</p>
-
-            <div class="mb-8">
-                <p class="text-gray-700 font-bold text-xl mb-3" id="educationalHoursHeadingText">🧠 3 ساعات تعليمية فعّالة:</p>
-                <ul class="list-none pr-0">
-                    <li class="feature-item"><span class="feature-icon">🗣️</span><span>محادثة حقيقية مع مدرسين محترفين</span></li>
-                    <li class="feature-item"><span class="feature-icon">✍️</span><span>أنشطة قراءة وكتابة وفق منهج McMillion الدولي</span></li>
-                    <li class="feature-item"><span class="feature-icon">🎲</span><span>ألعاب تعليمية تحفّز التفاعل وتنمّي الثقة</span></li>
-                </ul>
-            </div>
-
-            <div class="mb-8">
-                <p class="text-gray-700 font-bold text-xl mb-3" id="recreationalHoursHeadingText">🎨 1 ساعة ترفيهية يومية:</p>
-                <ul class="list-none pr-0">
-                    <li class="feature-item"><span class="feature-icon">🏊</span><span>أيام سباحة مرحة</span></li>
-                    <li class="feature-item"><span class="feature-icon">🖌️</span><span>ورش فنية وإبداعية</span></li>
-                    <li class="feature-item"><span class="feature-icon">🎬</span><span>عروض سينما تعليمية</span></li>
-                    <li class="feature-item"><span class="feature-icon">🤝</span><span>ألعاب جماعية لتعزيز روح الفريق</span></li>
-                </ul>
-            </div>
-
-            <div class="mb-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-3" id="methodologyHeadingText">📘 المنهج المستخدم:</h3>
-                <p class="text-gray-600" id="methodologyDescriptionText">McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياته ويطوّر مهاراتهم الأربع:<br>(الاستماع – التحدث – القراءة – الكتابة)</p>
-            </div>
-
-            <div class="mb-8">
-                <p class="text-gray-700 font-bold text-lg mb-2" id="durationTextContent">🗓️ المدة: 6 أسابيع متكاملة</p>
-                <p class="text-gray-700 font-bold text-lg mb-2" id="datesTextContent">📆 من 1 يونيو إلى 15 يوليو 2025</p>
-                <p class="text-gray-700 font-bold text-lg mb-2" id="locationTextContent">📍 الموقع: تاجوراء – خلف منتزه السندباد</p>
-                <p class="text-gray-700 font-bold text-lg mb-2" id="contactPhoneDisplay">📞 للتسجيل والاستفسار: 0929272725</p>
-            </div>
-
-            <div class="mb-8">
-                <h3 class="text-xl font-bold text-gray-800 mb-3" id="ourGoalHeadingText">🚸 هدفنا:</h3>
-                <p class="text-gray-600" id="ourGoalDescriptionText">أن نغيّر نظرة الطفل للغة الإنجليزية،<br>من "مادة دراسية" إلى "مهارة ممتعة وقوية" يعيشها يوميًا.</p>
-            </div>
-
-            <p class="text-gray-700 font-semibold mb-6 text-xl" id="limitedSeatsTextContent">📌 المقاعد محدودة لضمان الجودة... لا تتردد!</p>
-
+            <h1 id="mainTitleText">الـ English مش لازم يكون عقدة ! 🎯</h1>
+            <p id="campSloganText">تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!</p>
+            <p class="camp-status" id="registrationStatusText">الدورة الثانية - تسجيل مفتوح الآن!</p>
             <a href="register.html" class="cta-button">سجل الآن!</a>
+        </div>
+    </section>
 
-            <div class="footer-info">
-                <p id="bottomContactInfoText">للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:</p>
-                <p id="bottomPhoneTextContent">الهاتف: 0929272725</p>
-                <p id="hashtagsTextContent">#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp</p>
-            </div>
+    <div class="slider-container">
+        <div class="slides" id="sliderSlides">
+            <div class="slide">الإنجليزية: مفتاح طفلك نحو عالم أوسع!</div>
+            <div class="slide">اجعل تعلم الإنجليزية مغامرة ممتعة لطفلك!</div>
+            <div class="slide">بناء الثقة في اللغة الإنجليزية، خطوة بخطوة.</div>
+            <div class="slide">صيف مليء بالمرح والتعلم... بالإنجليزية!</div>
+            <div class="slide">مستقبل طفلك يبدأ بإتقان الإنجليزية.</div>
+        </div>
+        <button class="slider-nav-btn prev-btn" id="prevBtn">❮</button>
+        <button class="slider-nav-btn next-btn" id="nextBtn">❯</button>
+        <div class="slider-dots" id="sliderDots">
+            <span class="dot active" data-slide="0"></span>
+            <span class="dot" data-slide="1"></span>
+            <span class="dot" data-slide="2"></span>
+            <span class="dot" data-slide="3"></span>
+            <span class="dot" data-slide="4"></span>
         </div>
     </div>
+
+    <section class="section-container">
+        <h2 class="section-title" id="programHeadingText">برنامج يومي متوازن ومصمّم بعناية:</h2>
+        <p class="text-lg text-gray-700 mb-8 text-center" id="programIntroText">بدل ما يقضي الصيف قدام الشاشات، يجمع مخيمنا بين اللغة، الثقة، واللعب الهادف في تجربة تعليمية لا تُنسى.</p>
+
+        <div class="program-grid">
+            <div class="program-card">
+                <h3 id="educationalHoursHeadingText">🧠 3 ساعات تعليمية فعّالة:</h3>
+                <ul>
+                    <li class="feature-item"><span>محادثة حقيقية مع مدرسين محترفين</span><span class="feature-icon">🗣️</span></li>
+                    <li class="feature-item"><span>أنشطة قراءة وكتابة وفق منهج McMillion الدولي</span><span class="feature-icon">✍️</span></li>
+                    <li class="feature-item"><span>ألعاب تعليمية تحفّز التفاعل وتنمّي الثقة</span><span class="feature-icon">🎲</span></li>
+                </ul>
+            </div>
+            <div class="program-card">
+                <h3 id="recreationalHoursHeadingText">🎨 1 ساعة ترفيهية يومية:</h3>
+                <ul>
+                    <li class="feature-item"><span>أيام سباحة مرحة</span><span class="feature-icon">🏊</span></li>
+                    <li class="feature-item"><span>ورش فنية وإبداعية</span><span class="feature-icon">🖌️</span></li>
+                    <li class="feature-item"><span>عروض سينما تعليمية</span><span class="feature-icon">🎬</span></li>
+                    <li class="feature-item"><span>ألعاب جماعية لتعزيز روح الفريق</span><span class="feature-icon">🤝</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title" id="methodologyHeadingText">📘 المنهج المستخدم:</h2>
+        <p class="methodology-content" id="methodologyDescriptionText">McMillion المعتمد عالميًا، مصمم خصيصًا للأطفال ليراعي مستوياتهم ويطوّر مهاراتهم الأربع:<br>(الاستماع – التحدث – القراءة – الكتابة)</p>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title">معلومات أساسية:</h2>
+        <div class="info-grid">
+            <div class="info-item" id="durationTextContent">🗓️ المدة: 6 أسابيع متكاملة</div>
+            <div class="info-item" id="datesTextContent">📆 من 1 يونيو إلى 15 يوليو 2025</div>
+            <div class="info-item" id="locationTextContent">📍 الموقع: تاجوراء – خلف منتزه السندباد</div>
+            <div class="info-item" id="contactPhoneDisplay">📞 للتسجيل والاستفسار: 0929272725</div>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title" id="ourGoalHeadingText">🚸 هدفنا:</h2>
+        <p class="goal-content" id="ourGoalDescriptionText">أن نغيّر نظرة الطفل للغة الإنجليزية،<br>من "مادة دراسية" إلى "مهارة ممتعة وقوية" يعيشها يوميًا.</p>
+        <p class="text-xl font-semibold text-center mt-8 text-red-600" id="limitedSeatsTextContent">📌 المقاعد محدودة لضمان الجودة... لا تتردد!</p>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title">ماذا يقول أولياء الأمور؟</h2>
+        <div class="testimonial-slider">
+            <div class="testimonial-card">
+                <p>"تجربة رائعة! ابني أحب المخيم وتطور مستواه في الإنجليزية بشكل ملحوظ."</p>
+                <div class="author">- ولي أمر طالب</div>
+                <div class="rating">⭐⭐⭐⭐⭐</div>
+            </div>
+            <div class="testimonial-card">
+                <p>"لم أكن أتوقع هذا القدر من المتعة والتعلم في نفس الوقت. شكراً لكم!"</p>
+                <div class="author">- أميرة محمد</div>
+                <div class="rating">⭐⭐⭐⭐</div>
+            </div>
+            </div>
+    </section>
+
+    <section class="section-container text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">لا تفوت الفرصة!</h2>
+        <a href="register.html" class="cta-button">سجل طفلك الآن!</a>
+    </section>
+
+    <footer class="footer-info">
+        <p id="bottomContactInfoText">للمزيد من المعلومات والتسجيل، يرجى الاتصال بنا:</p>
+        <p id="bottomPhoneTextContent">الهاتف: 0929272725</p>
+        <p id="hashtagsTextContent">#مخيم_الإنجليزية #صيف_2025 #EnglishForKids #طرابلس #تعليم_وترفيه #TripoliSummerCamp</p>
+    </footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -316,7 +565,7 @@
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? initialAuthToken : null; // Fixed: Use initialAuthToken here
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; 
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -327,12 +576,12 @@
         const defaultSettings = {
             logoUrl: 'https://storage.googleapis.com/gemini-generated-images-prod/images/487167779_29373139318966172_855389515226951087_n-removebg-preview.png-eceb72d9-53f1-4e83-8187b6db22cc', // Updated to public URL
             colors: {
-                bodyBg: '#E6F0F5',
-                headerGradientStart: '#3F72AF',
-                headerGradientEnd: '#112D4E',
-                featureIconColor: '#3B82F6',
-                formSubmitButtonStart: '#3B82F6',
-                formSubmitButtonEnd: '#2563EB'
+                bodyBg: '#FDFDFD', /* Very light off-white */
+                headerGradientStart: '#2C5F8A', /* Darker blue for header/primary elements */
+                headerGradientEnd: '#4A6C8C', /* Lighter blue for header gradient end */
+                featureIconColor: '#D4AF37', /* Gold accent */
+                formSubmitButtonStart: '#2ECC71', /* Lighter green for CTA */
+                formSubmitButtonEnd: '#27AE60' /* Darker green for CTA hover */
             },
             texts: {
                 mainTitle: "الـ English مش لازم يكون عقدة ! 🎯",
@@ -407,13 +656,15 @@
         }
 
         function applySettings(settings) {
-            // Apply colors to CSS variables
-            document.documentElement.style.setProperty('--body-bg', settings.colors.bodyBg);
-            document.documentElement.style.setProperty('--header-gradient-start', settings.colors.headerGradientStart);
-            document.documentElement.style.setProperty('--header-gradient-end', settings.colors.headerGradientEnd);
-            document.documentElement.style.setProperty('--feature-icon-color', settings.colors.featureIconColor);
-            document.documentElement.style.setProperty('--form-submit-button-start', settings.colors.formSubmitButtonStart);
-            document.documentElement.style.setProperty('--form-submit-button-end', settings.colors.formSubmitButtonEnd);
+            // Apply colors to CSS variables based on the new lighter palette
+            document.documentElement.style.setProperty('--primary-light-blue', '#E0F2F7');
+            document.documentElement.style.setProperty('--secondary-off-white', '#FDFDFD');
+            document.documentElement.style.setProperty('--accent-gold', settings.colors.featureIconColor);
+            document.documentElement.style.setProperty('--text-dark', '#334155');
+            document.documentElement.style.setProperty('--header-dark-blue', settings.colors.headerGradientStart);
+            document.documentElement.style.setProperty('--cta-green-light', settings.colors.formSubmitButtonStart);
+            document.documentElement.style.setProperty('--cta-green-dark', settings.colors.formSubmitButtonEnd);
+
 
             // Apply text content
             document.getElementById('schoolLogo').src = settings.logoUrl;
@@ -506,6 +757,21 @@
         // Start slider on page load with default settings (will be overwritten by Firestore if available)
         document.addEventListener('DOMContentLoaded', () => {
             applySettings(defaultSettings); // Apply default settings initially
+            // Setup intersection observer for scroll reveal animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                        entry.target.style.transition = 'opacity 0.8s ease-out, transform 0.8s ease-out';
+                        observer.unobserve(entry.target); // Stop observing once animated
+                    }
+                });
+            }, { threshold: 0.1 }); // Trigger when 10% of the element is visible
+
+            document.querySelectorAll('.section-container').forEach(section => {
+                observer.observe(section);
+            });
         });
 
         // Listen for messages from parent window (dashboard)
