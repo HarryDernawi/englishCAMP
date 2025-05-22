@@ -335,7 +335,7 @@
             color: white;
         }
 
-        /* --- Slider Design --- */
+        /* --- Slider Design (Simplified) --- */
         .slider-container {
             background-color: var(--secondary-off-white);
             padding: 1rem;
@@ -343,111 +343,30 @@
             box-shadow: 0 10px 20px var(--shadow-medium);
             position: relative;
             width: 100%;
-            max-width: 700px; /* Smaller max-width for the slider */
+            max-width: 700px;
             margin: 2rem auto;
-            overflow: hidden; /* Changed to hidden for JS control */
-            /* Removed scroll-snap-type and scroll-behavior as they are redundant with JS transform */
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            overflow: hidden;
+            height: 220px; /* Fixed height for consistency */
+            display: flex; /* To center the text */
+            align-items: center; /* To center the text vertically */
+            justify-content: center; /* To center the text horizontally */
         }
-        .slider-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        .slides {
-            display: flex;
-            transition: transform 0.5s ease-in-out;
-            width: 100%; /* Ensure it takes full width for transform */
-            height: 220px; /* Fixed height for slides container */
-        }
-        .slide {
-            flex-shrink: 0;
-            width: 100%; /* Each slide takes 100% of slides container width */
-            box-sizing: border-box;
-            background-color: var(--primary-light-blue); /* Changed to primary-light-blue for cards */
+        .single-slide-display {
+            background-color: var(--primary-light-blue); /* Background for the text area */
             color: var(--text-dark);
-            font-size: 1.4rem; /* Slightly smaller font size for slides */
+            font-size: 1.4rem;
             font-weight: 500;
-            border-radius: 1rem;
-            box-shadow: 0 5px 10px var(--shadow-light);
-            height: 100%; /* Take full height of slides container */
+            text-align: center;
+            padding: 1rem;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
-            text-align: center;
             white-space: normal;
             overflow-wrap: break-word;
-            /* Removed scroll-snap-align as it's redundant with JS transform */
-        }
-        /* Responsive adjustments for slide width - these are less critical with JS transform */
-        @media (max-width: 700px) {
-            .slide {
-                /* width: calc(100vw - 4rem); */ /* Not needed with JS transform */
-            }
-        }
-        @media (max-width: 640px) {
-            .slide {
-                /* width: calc(100vw - 2rem); */ /* Not needed with JS transform */
-            }
-        }
-
-        /* Slide text variations */
-        .slide.style-1 { font-weight: 600; color: var(--header-dark-blue); }
-        .slide.style-2 { font-style: italic; font-size: 1.5rem; }
-        .slide.style-3 { /* Removed text-shadow */ }
-        .slide.style-4 { font-weight: 700; }
-        .slide.style-5 { font-size: 1.3rem; }
-        .slide.style-6 { color: #556270; } /* A slightly different shade of dark grey */
-
-
-        .slider-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0,0,0,0.02);
-            color: var(--header-dark-blue);
-            border: none;
-            border-radius: 50%;
-            padding: 0.2rem 0.15rem;
-            cursor: pointer;
-            z-index: 10;
-            font-size: 0.8rem;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: none;
-        }
-        .slider-nav-btn:hover {
-            background-color: rgba(0,0,0,0.05);
-            color: var(--header-dark-blue);
-            transform: translateY(-50%) scale(1.1);
-        }
-        .prev-btn {
-            right: 10px; /* For RTL, previous is on the right */
-        }
-        .next-btn {
-            left: 10px; /* For RTL, next is on the left */
-        }
-        .slider-dots {
-            display: flex;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-        .dot {
-            height: 12px;
-            width: 12px;
-            margin: 0 5px;
-            background-color: #D1D5DB;
-            border-radius: 50%;
-            display: inline-block;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            cursor: pointer;
-            border: 1px solid #9CA3AF;
-        }
-        .dot.active {
-            background-color: var(--accent-gold); /* Active dot color is now gold */
-            border-color: var(--header-dark-blue); /* Border for active dot */
-            transform: scale(1.2);
+            border-radius: 1rem; /* Rounded corners for the text display */
+            box-shadow: 0 5px 10px var(--shadow-light); /* Subtle shadow for the text display */
         }
 
         /* Testimonial Section */
@@ -606,11 +525,7 @@
     </section>
 
     <div class="slider-container" id="sliderContainer">
-        <div class="slides" id="sliderSlides">
-            </div>
-        <button class="slider-nav-btn prev-btn" id="prevBtn">❮</button>
-        <button class="slider-nav-btn next-btn" id="nextBtn">❯</button>
-        <div class="slider-dots" id="sliderDots">
+        <div class="single-slide-display" id="singleSlideDisplay">
             </div>
     </div>
 
@@ -761,14 +676,10 @@
         // Global variables for slider elements
         let currentSlideIndex = 0;
         let slideInterval;
-        let sliderContainer;
-        let slidesWrapper;
-        let slides; // Will be updated in renderSlides
-        let dots;   // Will be updated in renderSlides
+        let singleSlideDisplay; // New variable for the single text display element
 
-        // Global variable for slider phrases and styles
+        // Global variable for slider phrases (keep this)
         window.sliderPhrases = defaultSettings.texts.sliderPhrases;
-        const slideStyles = ['style-1', 'style-2', 'style-3', 'style-4', 'style-5', 'style-6'];
 
         // Admin Modal elements
         const adminButton = document.getElementById('adminButton');
@@ -818,8 +729,8 @@
                 document.getElementById('hashtagsTextContent').textContent = settings.texts.hashtagsTextContent || '';
 
                 window.sliderPhrases = settings.texts.sliderPhrases || defaultSettings.texts.sliderPhrases;
-                if (slidesWrapper) { // Ensure slidesWrapper is available before rendering
-                    renderSlides();
+                if (singleSlideDisplay) { // Ensure the element is available before rendering
+                    renderSingleSlide();
                 }
             }
         }
@@ -839,7 +750,6 @@
                         }
                     }, (error) => {
                         console.error("Error listening to admin settings:", error);
-                        // showModal("حدث خطأ أثناء تحميل الإعدادات. قد لا يتم عرض الموقع بشكل صحيح."); // Not using modal here to avoid conflict
                     });
                 } else {
                     console.log("Not authenticated, loading default settings.");
@@ -848,35 +758,29 @@
             });
         }
 
-        // Function to render slides and dots
-        function renderSlides() {
-            if (!slidesWrapper || !sliderDots) {
-                console.error("Slider elements not found. Cannot render slides.");
+        // New function to render the single slide and manage text changes
+        function renderSingleSlide() {
+            if (!singleSlideDisplay) {
+                console.error("Single slide display element not found. Cannot render text.");
                 return;
             }
-            slidesWrapper.innerHTML = '';
-            sliderDots.innerHTML = '';
             const phrasesToRender = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases : [];
 
-            phrasesToRender.forEach((phrase, index) => {
-                const slideDiv = document.createElement('div');
-                slideDiv.classList.add('slide', slideStyles[index % slideStyles.length]); // Apply styles
-                slideDiv.textContent = phrase;
-                slidesWrapper.appendChild(slideDiv);
-
-                const dotSpan = document.createElement('span');
-                dotSpan.classList.add('dot');
-                dotSpan.addEventListener('click', () => showSlide(index));
-                sliderDots.appendChild(dotSpan);
-            });
-            slides = slidesWrapper.children; // Assign the actual HTMLCollection to 'slides'
-            showSlide(currentSlideIndex);
+            if (phrasesToRender.length > 0) {
+                // Display the first phrase immediately
+                singleSlideDisplay.textContent = phrasesToRender[currentSlideIndex];
+                // Start the interval for changing text
+                startTextChanger();
+            } else {
+                singleSlideDisplay.textContent = "لا توجد عبارات لعرضها.";
+                stopTextChanger();
+            }
         }
 
-        // Function to show a specific slide
-        function showSlide(index) {
+        // Function to show a specific phrase by index
+        function showPhrase(index) {
             const phrasesLength = window.sliderPhrases && Array.isArray(window.sliderPhrases) ? window.sliderPhrases.length : 0;
-            if (phrasesLength === 0 || !slidesWrapper) return;
+            if (phrasesLength === 0 || !singleSlideDisplay) return;
 
             if (index >= phrasesLength) {
                 currentSlideIndex = 0;
@@ -886,59 +790,32 @@
                 currentSlideIndex = index;
             }
 
-            slidesWrapper.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
-
-            const dotsElements = document.querySelectorAll('.slider-dots .dot'); // Get dots every time to ensure they are current
-            dotsElements.forEach((dot, i) => {
-                if (i === currentSlideIndex) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
+            singleSlideDisplay.textContent = window.sliderPhrases[currentSlideIndex];
         }
 
-        // Event listeners for slider navigation
-        function nextSlide() {
-            showSlide(currentSlideIndex + 1);
+        // Function to advance to the next phrase
+        function nextPhrase() {
+            showPhrase(currentSlideIndex + 1);
         }
 
-        function prevSlide() {
-            showSlide(currentSlideIndex - 1);
+        // Start and stop text changer functions
+        function startTextChanger() {
+            stopTextChanger(); // Clear any existing interval
+            slideInterval = setInterval(nextPhrase, 5000); // Change text every 5 seconds
         }
 
-        // Start and stop slider functions
-        function startSlider() {
-            stopSlider();
-            slideInterval = setInterval(nextSlide, 5000);
-        }
-
-        function stopSlider() {
+        function stopTextChanger() {
             clearInterval(slideInterval);
         }
 
         // Main initialization on window load
         window.onload = function() {
             // Assign DOM elements to global variables here
-            sliderContainer = document.getElementById('sliderContainer');
-            slidesWrapper = document.getElementById('sliderSlides');
-            prevBtn = document.getElementById('prevBtn');
-            nextBtn = document.getElementById('nextBtn');
-            sliderDots = document.getElementById('sliderDots');
+            singleSlideDisplay = document.getElementById('singleSlideDisplay'); // Get the new element
 
-            // Attach event listeners for slider navigation buttons
-            if (prevBtn) prevBtn.addEventListener('click', prevSlide);
-            if (nextBtn) nextBtn.addEventListener('click', nextSlide);
-
-            // Pause slider on hover
-            if (slidesWrapper) {
-                slidesWrapper.addEventListener('mouseenter', stopSlider);
-                slidesWrapper.addEventListener('mouseleave', startSlider);
-            }
-
-            // Initial load of admin settings which will trigger renderSlides and startSlider
+            // Initial load of admin settings which will trigger renderSingleSlide and startTextChanger
             loadAdminSettings();
-            startSlider(); // Start the slider after loading settings/rendering slides
+            // startTextChanger is called within renderSingleSlide
         };
 
         // Admin button and modal logic
