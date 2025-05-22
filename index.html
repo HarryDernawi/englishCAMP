@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Cairo', sans-serif; /* Using Cairo for Arabic text */
-            background-color: #f0f4f8; /* Light gray background */
+            background-color: #f0f4f8; /* Light gray-blue background to complement dark blue */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -28,7 +28,7 @@
             flex-direction: column;
         }
         .header-bg {
-            background: linear-gradient(to right, #6366f1, #8b5cf6); /* Gradient purple */
+            background: linear-gradient(to right, #1a202c, #2d3748); /* Dark blue/gray gradient from logo */
             padding: 2.5rem 2rem;
             color: white;
             position: relative;
@@ -55,7 +55,7 @@
             padding: 2.5rem 2rem;
         }
         .cta-button {
-            background: linear-gradient(to right, #10b981, #059669); /* Green gradient */
+            background: linear-gradient(to right, #10b981, #059669); /* Green gradient - kept for contrast */
             color: white;
             padding: 1rem 2.5rem;
             border-radius: 0.75rem;
@@ -81,7 +81,7 @@
             text-align: right;
         }
         .feature-icon {
-            color: #8b5cf6; /* Purple icon color */
+            color: #3b82f6; /* A vibrant blue from the logo's palette */
             font-size: 1.5rem;
             flex-shrink: 0; /* Prevent icon from shrinking */
         }
@@ -110,12 +110,61 @@
                 justify-content: flex-end; /* Align feature items to the right */
             }
         }
-        .slogan-generator-section {
-            background-color: #f8fafc; /* Light blue-gray for this section */
+        .slogan-generator-section, .registration-form-section {
+            background-color: #f8fafc; /* Light blue-gray for sections */
             padding: 2rem;
             border-radius: 1rem;
             margin-top: 2.5rem;
             border: 1px solid #e2e8f0;
+            text-align: right; /* Align text to right for RTL */
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: right; /* Ensure labels align right */
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+            font-size: 1rem;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"],
+        .form-group input[type="tel"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            background-color: #ffffff;
+        }
+        .form-group input[type="radio"] {
+            margin-left: 0.5rem; /* Space between radio button and label */
+        }
+        .form-group .radio-group label {
+            display: inline-block;
+            margin-left: 1rem;
+            font-weight: 400; /* Normal weight for radio labels */
+        }
+        .form-submit-button {
+            background: linear-gradient(to right, #2563eb, #1e40af); /* Darker blue gradient from logo */
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: auto; /* Allow button to size based on content */
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+        .form-submit-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px -2px rgba(0, 0, 0, 0.1);
         }
         .slogan-input {
             width: 100%;
@@ -127,7 +176,7 @@
             margin-bottom: 1rem;
         }
         .generate-button {
-            background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient */
+            background: linear-gradient(to right, #f97316, #ea580c); /* Orange gradient - kept for contrast */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -156,7 +205,7 @@
         }
         .loading-spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #8b5cf6;
+            border-left-color: #2563eb; /* Blue spinner matching logo */
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -169,27 +218,161 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Custom Modal for messages */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Slider specific styles */
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 180px; /* Fixed height for the slider */
+            overflow: hidden;
+            margin-top: 1rem;
+            border-radius: 0.75rem;
+        }
+        .slides {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+            height: 100%;
+        }
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            background: rgba(0, 0, 0, 0.2); /* Slightly darker overlay for text readability */
+            border-radius: 0.75rem;
+        }
+        .slider-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+            border-radius: 0.5rem;
+            z-index: 10;
+            transition: background-color 0.3s ease;
+        }
+        .slider-nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .prev-slide {
+            left: 10px;
+        }
+        .next-slide {
+            right: 10px;
+        }
+        .slider-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .dot.active {
+            background-color: white;
+        }
+        .school-logo {
+            width: 120px; /* Adjusted size for the logo */
+            height: auto;
+            margin-top: 1rem;
+            margin-bottom: 1rem; /* Space below the logo */
+            display: block;
+            margin-left: auto; /* Center for RTL */
+            margin-right: auto; /* Center for RTL */
+        }
+        @media (min-width: 640px) {
+            .school-logo {
+                margin-right: 0; /* Align to right for RTL on larger screens */
+                margin-left: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="ad-container">
         <div class="header-bg">
+            <img src="487167779_29373139318966172_855389515226951087_n-removebg-preview.png" alt="شعار مدارس الأكاديمية" class="school-logo">
+
             <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight">
                 الـ English مش لازم يكون عقدة ! 🎯
             </h1>
-            <p class="text-xl md:text-2xl font-semibold mb-2">
-                تخيّل صيف يكون فيه تعلّم اللغة الإنجليزية هو الجزء الممتع من يوم طفلك!
-            </p>
-            <p class="text-lg md:text-xl font-medium mb-4">
-                نقدّم لك مخيمًا صيفيًا مختلفًا...
-            </p>
             <p class="text-xl md:text-2xl font-semibold mb-2">
                 مخيم اللغة الإنجليزية
             </p>
             <p class="text-lg md:text-xl font-medium">
                 الدورة الثانية - تسجيل مفتوح الآن!
             </p>
-            <img src="https://placehold.co/150x150/8b5cf6/ffffff?text=📚" alt="Book Icon" class="mt-8 mx-auto md:mr-0 md:ml-auto rounded-full w-24 h-24 object-cover">
+
+            <div class="slider-container">
+                <div class="slides" id="sliderSlides">
+                    </div>
+                <button class="slider-nav-btn prev-slide" id="prevSlideBtn">❮</button>
+                <button class="slider-nav-btn next-slide" id="nextSlideBtn">❯</button>
+                <div class="slider-dots" id="sliderDots">
+                    </div>
+            </div>
         </div>
 
         <div class="content-section">
@@ -253,7 +436,7 @@
 
             <div class="text-right mb-8">
                 <p class="text-gray-700 font-bold text-xl mb-3">🗓️ المدة: 6 أسابيع متكاملة</p>
-                <p class="text-gray-700 font-bold text-xl mb-3">📆 من 1 يونيو إلى 15 يوليو 2025</p>
+                <p class="text-700 font-bold text-xl mb-3">📆 من 1 يونيو إلى 15 يوليو 2025</p>
                 <p class="text-gray-700 font-bold text-xl mb-3">📍 الموقع: تاجوراء – خلف منتزه السندباد</p>
                 <p class="text-gray-700 font-bold text-xl mb-3">📞 للتسجيل والاستفسار: <span dir="ltr">0929272725</span></p>
             </div>
@@ -273,6 +456,48 @@
             <a href="tel:+218929272725" class="cta-button">
                 سجل الآن!
             </a>
+
+            <div class="registration-form-section">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">نموذج التسجيل</h3>
+                <form id="registrationForm">
+                    <div class="form-group">
+                        <label for="studentName">اسم الطالب/ة بالكامل:</label>
+                        <input type="text" id="studentName" name="studentName" required class="w-full">
+                    </div>
+                    <div class="form-group">
+                        <label for="studentAge">عمر الطالب/ة:</label>
+                        <input type="number" id="studentAge" name="studentAge" min="5" max="18" required class="w-full">
+                    </div>
+                    <div class="form-group">
+                        <label for="englishLevel">مستوى اللغة الإنجليزية:</label>
+                        <select id="englishLevel" name="englishLevel" required class="w-full">
+                            <option value="">اختر المستوى</option>
+                            <option value="beginner">مبتدئ</option>
+                            <option value="intermediate">متوسط</option>
+                            <option value="advanced">متقدم</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>القسم الدراسي:</label>
+                        <div class="radio-group flex justify-end gap-4 mt-2">
+                            <label for="localSection">
+                                <input type="radio" id="localSection" name="studentSection" value="local" required>
+                                محلي
+                            </label>
+                            <label for="internationalSection">
+                                <input type="radio" id="internationalSection" name="studentSection" value="international">
+                                دولي
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="parentPhone">رقم هاتف ولي الأمر:</label>
+                        <input type="tel" id="parentPhone" name="parentPhone" pattern="[0-9]{10}" placeholder="مثال: 0921234567" required class="w-full" dir="ltr">
+                        <small class="text-gray-500 text-sm">الرجاء إدخال رقم هاتف مكون من 10 أرقام.</small>
+                    </div>
+                    <button type="submit" class="form-submit-button">إرسال طلب التسجيل</button>
+                </form>
+            </div>
 
             <div class="slogan-generator-section">
                 <h3 class="text-2xl font-bold text-gray-800 mb-4">
@@ -298,16 +523,56 @@
         </div>
     </div>
 
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modalMessage" class="text-lg font-semibold text-gray-800"></p>
+            <p class="text-gray-600 mt-2">سنقوم بالتواصل معكم قريباً لإتمام عملية التسجيل.</p>
+        </div>
+    </div>
+
     <script type="module">
         // Firebase global variables are provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Get references to the DOM elements
+        // Get references to the DOM elements for Slogan Generator
         const sloganInput = document.getElementById('sloganInput');
         const generateSloganBtn = document.getElementById('generateSloganBtn');
         const sloganOutput = document.getElementById('sloganOutput');
+
+        // Get references to the DOM elements for Registration Form
+        const registrationForm = document.getElementById('registrationForm');
+        const studentNameInput = document.getElementById('studentName');
+        const studentAgeInput = document.getElementById('studentAge');
+        const englishLevelSelect = document.getElementById('englishLevel');
+        const localSectionRadio = document.getElementById('localSection');
+        const internationalSectionRadio = document.getElementById('internationalSection');
+        const parentPhoneInput = document.getElementById('parentPhone');
+
+        // Get references for the custom modal
+        const modal = document.getElementById('myModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const closeButton = document.getElementsByClassName('close-button')[0];
+
+        // Function to display custom modal message
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex'; // Use flex to center content
+        }
+
+        // Close the modal when the close button is clicked
+        closeButton.onclick = function() {
+            modal.style.display = 'none';
+        }
+
+        // Close the modal when clicking outside of the modal content
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
 
         // Function to generate slogan using Gemini API
         generateSloganBtn.addEventListener('click', async () => {
@@ -357,6 +622,120 @@
                 generateSloganBtn.disabled = false; // Re-enable button
             }
         });
+
+        // Handle form submission
+        registrationForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            const studentData = {
+                name: studentNameInput.value,
+                age: studentAgeInput.value,
+                englishLevel: englishLevelSelect.value,
+                section: localSectionRadio.checked ? localSectionRadio.value : (internationalSectionRadio.checked ? internationalSectionRadio.value : ''),
+                parentPhone: parentPhoneInput.value
+            };
+
+            // Basic validation check for phone number pattern
+            const phonePattern = /^[0-9]{10}$/;
+            if (!phonePattern.test(studentData.parentPhone)) {
+                showModal('الرجاء إدخال رقم هاتف ولي أمر صحيح مكون من 10 أرقام.');
+                return;
+            }
+
+            // Here you would typically send this data to a backend server or a database
+            // For now, we'll just display a confirmation message using the custom modal.
+            console.log('بيانات التسجيل:', studentData);
+            showModal('تم استلام طلب تسجيل الطالب/ة ' + studentData.name + ' بنجاح!');
+
+            // Optionally, clear the form after submission
+            registrationForm.reset();
+        });
+
+        // Slider functionality
+        const sliderSlides = document.getElementById('sliderSlides');
+        const prevSlideBtn = document.getElementById('prevSlideBtn');
+        const nextSlideBtn = document.getElementById('nextSlideBtn');
+        const sliderDots = document.getElementById('sliderDots');
+
+        const phrases = [
+            "الإنجليزية: مفتاح طفلك نحو عالم أوسع!",
+            "اجعل تعلم الإنجليزية مغامرة ممتعة لطفلك!",
+            "بناء الثقة في اللغة الإنجليزية، خطوة بخطوة.",
+            "صيف مليء بالمرح والتعلم... بالإنجليزية!",
+            "مستقبل طفلك يبدأ بإتقان الإنجليزية."
+        ];
+
+        let currentSlideIndex = 0;
+        let slideInterval;
+
+        function renderSlides() {
+            sliderSlides.innerHTML = '';
+            sliderDots.innerHTML = '';
+            phrases.forEach((phrase, index) => {
+                const slideDiv = document.createElement('div');
+                slideDiv.classList.add('slide');
+                slideDiv.textContent = phrase;
+                sliderSlides.appendChild(slideDiv);
+
+                const dotSpan = document.createElement('span');
+                dotSpan.classList.add('dot');
+                dotSpan.addEventListener('click', () => showSlide(index));
+                sliderDots.appendChild(dotSpan);
+            });
+            showSlide(currentSlideIndex);
+        }
+
+        function showSlide(index) {
+            if (index >= phrases.length) {
+                currentSlideIndex = 0;
+            } else if (index < 0) {
+                currentSlideIndex = phrases.length - 1;
+            } else {
+                currentSlideIndex = index;
+            }
+
+            sliderSlides.style.transform = `translateX(-${currentSlideIndex * 100}%)`;
+
+            // Update dots
+            const dots = document.querySelectorAll('.slider-dots .dot');
+            dots.forEach((dot, i) => {
+                if (i === currentSlideIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function nextSlide() {
+            showSlide(currentSlideIndex + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlideIndex - 1);
+        }
+
+        prevSlideBtn.addEventListener('click', prevSlide);
+        nextSlideBtn.addEventListener('click', nextSlide);
+
+        function startSlider() {
+            stopSlider(); // Clear any existing interval
+            slideInterval = setInterval(nextSlide, 5000); // Change slide every 5 seconds
+        }
+
+        function stopSlider() {
+            clearInterval(slideInterval);
+        }
+
+        // Initialize slider on window load
+        window.onload = function() {
+            renderSlides();
+            startSlider();
+        };
+
+        // Pause slider on hover
+        sliderSlides.addEventListener('mouseenter', stopSlider);
+        sliderSlides.addEventListener('mouseleave', startSlider);
     </script>
 </body>
 </html>
