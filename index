@@ -1,0 +1,2491 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, Timestamp, setDoc } from 'firebase/firestore'; // Import setDoc for upsert
+
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'; // Recharts imports
+
+// Helper function to export data to CSV format
+const exportToCsv = (filename, rows) => {
+  if (!rows || rows.length === 0) {
+    alert("لا توجد بيانات لتصديرها."); // Inform user if no data is available
+    return;
+  }
+
+  // Generate CSV header from the keys of the first row object
+  const header = Object.keys(rows[0]).join(',');
+  // Map each row to a CSV line, handling special characters by enclosing in double quotes
+  const csv = [
+    header,
+    ...rows.map(row => Object.values(row).map(value => {
+      // Escape double quotes within the value and enclose in double quotes if it contains commas or newlines
+      let processedValue = String(value).replace(/"/g, '""');
+      if (processedValue.includes(',') || processedValue.includes('\n')) {
+        processedValue = `"${processedValue}"`;
+      }
+      return processedValue;
+    }).join(','))
+  ].join('\n');
+
+  // Create a Blob object from the CSV string
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  // Create a temporary anchor element to trigger the download
+  const link = document.createElement('a');
+  if (link.download !== undefined) { // Feature detection for download attribute
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden'; // Hide the link
+    document.body.appendChild(link); // Append to body to make it clickable
+    link.click(); // Programmatically click the link to trigger download
+    document.body.removeChild(link); // Remove the temporary link
+  }
+};
+
+
+// ==================================================================================================
+// --- COMPONENTS ---
+// ==================================================================================================
+
+// DashboardLayout component: Provides the overall structure of the dashboard, including sidebar and header.
+const DashboardLayout = ({ children, activeSection, setActiveSection, userId, userRole, setUserRole }) => {
+  // Define sidebar items with their icons, text, and roles that can access them
+  const sidebarItems = [
+    { icon: "📊", text: "الرئيسية", section: "dashboard", roles: ['admin'] },
+    { icon: "🧑‍🎓", text: "الطلاب", section: "students", roles: ['admin'] },
+    { icon: "🏫", text: "الفصول", section: "classes", roles: ['admin'] },
+    { icon: "📚", text: "الدورات", section: "courses", roles: ['admin'] },
+    { icon: "💵", text: "المدفوعات", section: "payments", roles: ['admin'] },
+    { icon: "💸", text: "المصاريف", section: "expenses", roles: ['admin'] },
+    { icon: "📈", text: "التقارير", section: "reports", roles: ['admin'] },
+    { icon: "👨‍🏫", text: "المدربون", section: "instructors", roles: ['admin'] },
+    { icon: "🗓️", text: "الحضور", section: "attendance", roles: ['admin', 'supervisor'] },
+    { icon: "📜", text: "الشهادات", section: "certificates", roles: ['admin'] },
+  ];
+
+  return (
+    <div className="flex min-h-screen bg-gray-50 font-sans text-gray-800">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white shadow-md rounded-lg m-4 p-4 flex flex-col justify-between">
+        <div>
+          <div className="text-2xl font-bold text-blue-600 mb-8 px-4 py-2 rounded-lg bg-blue-50">
+            لوحة التحكم
+          </div>
+          <nav className="space-y-2">
+            {/* Render sidebar items based on the current user's role */}
+            {sidebarItems.map(item => (
+              (item.roles.includes(userRole)) && ( // Check if the current role is allowed to see this item
+                <SidebarItem
+                  key={item.section}
+                  icon={item.icon}
+                  text={item.text}
+                  isActive={activeSection === item.section}
+                  onClick={() => setActiveSection(item.section)}
+                />
+              )
+            ))}
+          </nav>
+        </div>
+        {userId && (
+          <div className="mt-8 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
+            <p className="font-semibold">معرف المستخدم:</p>
+            <p className="break-all">{userId}</p>
+            <div className="mt-2">
+              <label htmlFor="role-switcher" className="block text-xs font-medium text-gray-500 mb-1">
+                تبديل الدور (للمحاكاة): {/* Role switcher for demonstration purposes */}
+              </label>
+              <select
+                id="role-switcher"
+                value={userRole}
+                onChange={(e) => {
+                  setUserRole(e.target.value); // Update the user role
+                  // Redirect to appropriate section based on the new role
+                  if (e.target.value === 'supervisor') {
+                    setActiveSection('attendance'); // Supervisors only see attendance
+                  } else {
+                    setActiveSection('dashboard'); // Admins go to dashboard
+                  }
+                }}
+                className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="admin">المدير</option>
+                <option value="supervisor">المشرف</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Main content area */}
+      <main className="flex-1 p-4">
+        {/* Header */}
+        <header className="bg-white shadow-md rounded-lg p-6 mb-6 flex justify-between items-center">
+          <h1 className="text-3xl font-semibold text-gray-700">لوحة تحكم المركز التعليمي</h1>
+          <div className="flex items-center space-x-4">
+            {/* Display current user role */}
+            <span className="text-gray-600">مرحباً، {userRole === 'admin' ? 'المدير' : 'المشرف'}!</span>
+          </div>
+        </header>
+
+        {/* Dynamic content based on activeSection */}
+        <div className="bg-white shadow-md rounded-lg p-6 min-h-[calc(100vh-180px)]">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// SidebarItem component: Represents a single clickable item in the sidebar.
+const SidebarItem = ({ icon, text, isActive, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center w-full p-3 rounded-lg text-lg transition-colors duration-200 ${
+      isActive
+        ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm' // Active state styling
+        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800' // Inactive state styling
+    }`}
+  >
+    <span className="ml-3 text-2xl">{icon}</span> {/* Icon */}
+    <span>{text}</span> {/* Text */}
+  </button>
+);
+
+// DashboardWidget component: A reusable card for displaying key metrics on the dashboard.
+const DashboardWidget = ({ title, value, icon, color, children }) => (
+  <div className={`p-6 rounded-lg shadow-md flex flex-col items-start ${color}`}>
+    <div className="flex items-center justify-between w-full mb-3">
+      <span className="text-4xl">{icon}</span> {/* Widget icon */}
+      <h3 className="text-xl font-semibold text-gray-700">{title}</h3> {/* Widget title */}
+    </div>
+    <p className="text-5xl font-bold text-gray-900 mt-2">{value}</p> {/* Widget value */}
+    {children} {/* Optional children for additional content like progress bars */}
+  </div>
+);
+
+// ==================================================================================================
+// --- MODALS ---
+// ==================================================================================================
+
+// AddStudentModal component: Modal for adding new student records.
+const AddStudentModal = ({ onClose, onAddStudent }) => {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && phone) {
+      await onAddStudent({ name, phone, email, paid: false }); // Add student with default paid status
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الاسم ورقم الهاتف).'); // Error message for missing fields
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إضافة طالب جديد</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="studentName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الطالب الكامل:
+            </label>
+            <input
+              type="text"
+              id="studentName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم الطالب"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="studentPhone" className="block text-sm font-medium text-gray-700 mb-1">
+              رقم الهاتف:
+            </label>
+            <input
+              type="tel"
+              id="studentPhone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 0911234567"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="studentEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              البريد الإلكتروني (اختياري):
+            </label>
+            <input
+              type="email"
+              id="studentEmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل البريد الإلكتروني"
+            />
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إضافة الطالب
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditStudentModal component: Modal for editing existing student records.
+const EditStudentModal = ({ student, onClose, onUpdateStudent }) => {
+  const [name, setName] = useState(student.name);
+  const [phone, setPhone] = useState(student.phone);
+  const [email, setEmail] = useState(student.email);
+  const [paid, setPaid] = useState(student.paid);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && phone) {
+      await onUpdateStudent(student.id, { name, phone, email, paid }); // Update student data
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الاسم ورقم الهاتف).'); // Error message for missing fields
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل بيانات الطالب</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editStudentName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الطالب الكامل:
+            </label>
+            <input
+              type="text"
+              id="editStudentName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم الطالب"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editStudentPhone" className="block text-sm font-medium text-gray-700 mb-1">
+              رقم الهاتف:
+            </label>
+            <input
+              type="tel"
+              id="editStudentPhone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 0911234567"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editStudentEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              البريد الإلكتروني (اختياري):
+            </label>
+            <input
+              type="email"
+              id="editStudentEmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل البريد الإلكتروني"
+            />
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="editStudentPaid"
+              checked={paid}
+              onChange={(e) => setPaid(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="editStudentPaid" className="ml-2 block text-sm font-medium text-gray-700">
+              تم الدفع
+            </label>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// AddClassModal component: Modal for creating new classes.
+const AddClassModal = ({ onClose, onAddClass }) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name) {
+      await onAddClass({ name, description }); // Add new class
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة اسم الفصل.'); // Error message for missing class name
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إنشاء فصل جديد</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="className" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الفصل:
+            </label>
+            <input
+              type="text"
+              id="className"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: فصل الرياضيات 101"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="classDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف (اختياري):
+            </label>
+            <textarea
+              id="classDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="3"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل وصفًا موجزًا للفصل"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إنشاء الفصل
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditClassModal component: Modal for editing existing class details.
+const EditClassModal = ({ cls, onClose, onUpdateClass }) => {
+  const [name, setName] = useState(cls.name);
+  const [description, setDescription] = useState(cls.description);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name) {
+      await onUpdateClass(cls.id, { name, description }); // Update class data
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة اسم الفصل.'); // Error message for missing class name
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل الفصل</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editClassName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الفصل:
+            </label>
+            <input
+              type="text"
+              id="editClassName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: فصل الرياضيات 101"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editClassDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف (اختياري):
+            </label>
+            <textarea
+              id="editClassDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="3"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل وصفًا موجزًا للفصل"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// AssignStudentsToClassModal component: Modal for assigning students to a class.
+const AssignStudentsToClassModal = ({ cls, students, onClose, onUpdateClass }) => {
+  const [selectedStudentIds, setSelectedStudentIds] = useState(cls.students || []); // Initialize with currently assigned students
+
+  const handleCheckboxChange = (studentId) => {
+    // Toggle student selection
+    setSelectedStudentIds(prevSelected =>
+      prevSelected.includes(studentId)
+        ? prevSelected.filter(id => id !== studentId) // Remove if already selected
+        : [...prevSelected, studentId] // Add if not selected
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onUpdateClass(cls.id, { students: selectedStudentIds }); // Update class with new student assignments
+    onClose(); // Close modal on success
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تنسيب طلاب إلى فصل: {cls.name}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3">
+            {students.length === 0 ? (
+              <p className="text-sm text-gray-500">لا يوجد طلاب متاحون للتنسيب.</p>
+            ) : (
+              students.map(student => (
+                <div key={student.id} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id={`student-${student.id}`}
+                    checked={selectedStudentIds.includes(student.id)}
+                    onChange={() => handleCheckboxChange(student.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor={`student-${student.id}`} className="ml-2 block text-sm font-medium text-gray-700">
+                    {student.name} ({student.email || student.phone})
+                  </label>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// AssignInstructorsToClassModal component: Modal for assigning instructors to a class.
+const AssignInstructorsToClassModal = ({ cls, instructors, onClose, onUpdateClass }) => {
+  const [selectedInstructorIds, setSelectedInstructorIds] = useState(cls.instructors || []); // Initialize with currently assigned instructors
+
+  const handleCheckboxChange = (instructorId) => {
+    // Toggle instructor selection
+    setSelectedInstructorIds(prevSelected =>
+      prevSelected.includes(instructorId)
+        ? prevSelected.filter(id => id !== instructorId) // Remove if already selected
+        : [...prevSelected, instructorId] // Add if not selected
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await onUpdateClass(cls.id, { instructors: selectedInstructorIds }); // Update class with new instructor assignments
+    onClose(); // Close modal on success
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تنسيب مدربين إلى فصل: {cls.name}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md p-3">
+            {instructors.length === 0 ? (
+              <p className="text-sm text-gray-500">لا يوجد مدربون متاحون للتنسيب.</p>
+            ) : (
+              instructors.map(instructor => (
+                <div key={instructor.id} className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id={`instructor-${instructor.id}`}
+                    checked={selectedInstructorIds.includes(instructor.id)}
+                    onChange={() => handleCheckboxChange(instructor.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor={`instructor-${instructor.id}`} className="ml-2 block text-sm font-medium text-gray-700">
+                    {instructor.name} ({instructor.specialty || 'لا يوجد تخصص'})
+                  </label>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// AddPaymentModal component: Modal for adding new payment records.
+const AddPaymentModal = ({ onClose, onAddPayment, students, courses }) => {
+  const [studentId, setStudentId] = useState('');
+  const [courseId, setCourseId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Default to current date (YYYY-MM-DD)
+  const [discount, setDiscount] = useState('');
+  const [status, setStatus] = useState('مدفوع');
+  const [notes, setNotes] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (studentId && amount && !isNaN(parseFloat(amount))) { // Validate required fields and amount is a number
+      await onAddPayment({
+        studentId,
+        courseId: courseId || null, // Use null if no course is selected
+        amount: parseFloat(amount),
+        date: new Date(date), // Convert date string to Date object for Firestore
+        discount: parseFloat(discount) || 0, // Default discount to 0 if not provided
+        status,
+        notes,
+      });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الطالب والمبلغ).'); // Error message for missing fields
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إضافة دفعة جديدة</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="studentSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              الطالب:
+            </label>
+            <select
+              id="studentSelect"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            >
+              <option value="">اختر طالباً...</option>
+              {students.map(student => (
+                <option key={student.id} value={student.id}>
+                  {student.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="courseSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              الدورة (اختياري):
+            </label>
+            <select
+              id="courseSelect"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">اختر دورة...</option>
+              {courses.map(course => (
+                <option key={course.id} value={course.id}>
+                  {course.name} ({course.price.toLocaleString()} د.ل)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="paymentAmount" className="block text-sm font-medium text-gray-700 mb-1">
+              المبلغ (د.ل):
+            </label>
+            <input
+              type="number"
+              id="paymentAmount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 250.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="paymentDate" className="block text-sm font-medium text-gray-700 mb-1">
+              التاريخ:
+            </label>
+            <input
+              type="date"
+              id="paymentDate"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="paymentDiscount" className="block text-sm font-medium text-gray-700 mb-1">
+              الخصم (د.ل) (اختياري):
+            </label>
+            <input
+              type="number"
+              id="paymentDiscount"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 20.00"
+              step="0.01"
+            />
+          </div>
+          <div>
+            <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 mb-1">
+              الحالة:
+            </label>
+            <select
+              id="paymentStatus"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="مدفوع">مدفوع</option>
+              <option value="معلق">معلق</option>
+              <option value="جزئي">جزئي</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="paymentNotes" className="block text-sm font-medium text-gray-700 mb-1">
+              ملاحظات (اختياري):
+            </label>
+            <textarea
+              id="paymentNotes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows="2"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل أي ملاحظات حول الدفعة"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إضافة الدفعة
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditPaymentModal component: Modal for editing existing payment records.
+const EditPaymentModal = ({ payment, onClose, onUpdatePayment, students, courses }) => {
+  // Initialize state with current payment data, converting Timestamp to date string
+  const [studentId, setStudentId] = useState(payment.studentId);
+  const [courseId, setCourseId] = useState(payment.courseId || '');
+  const [amount, setAmount] = useState(payment.amount);
+  const [date, setDate] = useState(payment.date.toDate().toISOString().split('T')[0]);
+  const [discount, setDiscount] = useState(payment.discount || '');
+  const [status, setStatus] = useState(payment.status);
+  const [notes, setNotes] = useState(payment.notes || '');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (studentId && amount && !isNaN(parseFloat(amount))) { // Validate required fields and amount
+      await onUpdatePayment(payment.id, {
+        studentId,
+        courseId: courseId || null,
+        amount: parseFloat(amount),
+        date: new Date(date), // Convert date string back to Date object
+        discount: parseFloat(discount) || 0,
+        status,
+        notes,
+      });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الطالب والمبلغ).'); // Error message
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل الدفعة</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editStudentSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              الطالب:
+            </label>
+            <select
+              id="editStudentSelect"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            >
+              <option value="">اختر طالباً...</option>
+              {students.map(student => (
+                <option key={student.id} value={student.id}>
+                  {student.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="editCourseSelect" className="block text-sm font-medium text-gray-700 mb-1">
+              الدورة (اختياري):
+            </label>
+            <select
+              id="editCourseSelect"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">اختر دورة...</option>
+              {courses.map(course => (
+                <option key={course.id} value={course.id}>
+                  {course.name} ({course.price.toLocaleString()} د.ل)
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="editPaymentAmount" className="block text-sm font-medium text-gray-700 mb-1">
+              المبلغ (د.ل):
+            </label>
+            <input
+              type="number"
+              id="editPaymentAmount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 250.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editPaymentDate" className="block text-sm font-medium text-gray-700 mb-1">
+              التاريخ:
+            </label>
+            <input
+              type="date"
+              id="editPaymentDate"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editPaymentDiscount" className="block text-sm font-medium text-gray-700 mb-1">
+              الخصم (د.ل) (اختياري):
+            </label>
+            <input
+              type="number"
+              id="editPaymentDiscount"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 20.00"
+              step="0.01"
+            />
+          </div>
+          <div>
+            <label htmlFor="editPaymentStatus" className="block text-sm font-medium text-gray-700 mb-1">
+              الحالة:
+            </label>
+            <select
+              id="editPaymentStatus"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="مدفوع">مدفوع</option>
+              <option value="معلق">معلق</option>
+              <option value="جزئي">جزئي</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="editPaymentNotes" className="block text-sm font-medium text-gray-700 mb-1">
+              ملاحظات (اختياري):
+            </label>
+            <textarea
+              id="editPaymentNotes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows="2"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل أي ملاحظات حول الدفعة"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// AddCourseModal component: Modal for adding new course records.
+const AddCourseModal = ({ onClose, onAddCourse }) => {
+  const [name, setName] = useState('');
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && !isNaN(parseFloat(price))) { // Validate name and price is a number
+      await onAddCourse({ name, price: parseFloat(price), description });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (اسم الدورة والسعر).'); // Error message
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إضافة دورة جديدة</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="courseName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الدورة:
+            </label>
+            <input
+              type="text"
+              id="courseName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم الدورة"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="coursePrice" className="block text-sm font-medium text-gray-700 mb-1">
+              السعر (د.ل):
+            </label>
+            <input
+              type="number"
+              id="coursePrice"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 500.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="courseDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف (اختياري):
+            </label>
+            <textarea
+              id="courseDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="3"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل وصفًا موجزًا للدورة"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إضافة الدورة
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditCourseModal component: Modal for editing existing course details.
+const EditCourseModal = ({ course, onClose, onUpdateCourse }) => {
+  const [name, setName] = useState(course.name);
+  const [price, setPrice] = useState(course.price);
+  const [description, setDescription] = useState(course.description);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && !isNaN(parseFloat(price))) { // Validate name and price
+      await onUpdateCourse(course.id, { name, price: parseFloat(price), description });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (اسم الدورة والسعر).'); // Error message
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل الدورة</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editCourseName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم الدورة:
+            </label>
+            <input
+              type="text"
+              id="editCourseName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم الدورة"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editCoursePrice" className="block text-sm font-medium text-gray-700 mb-1">
+              السعر (د.ل):
+            </label>
+            <input
+              type="number"
+              id="editCoursePrice"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 500.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editCourseDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف (اختياري):
+            </label>
+            <textarea
+              id="editCourseDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="3"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل وصفًا موجزًا للدورة"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// AddExpenseModal component: Modal for adding new expense records.
+const AddExpenseModal = ({ onClose, onAddExpense }) => {
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Default to current date
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (description && amount && !isNaN(parseFloat(amount))) { // Validate required fields and amount
+      await onAddExpense({
+        description,
+        amount: parseFloat(amount),
+        category: category || 'عام', // Default category if not selected
+        date: new Date(date), // Convert date string to Date object
+      });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الوصف والمبلغ).'); // Error message
+    }
+  };
+
+  const categories = ['رواتب', 'إيجار', 'كهرباء/ماء', 'صيانة', 'لوازم', 'تسويق', 'عام']; // Predefined expense categories
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إضافة مصروف جديد</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="expenseDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف:
+            </label>
+            <input
+              type="text"
+              id="expenseDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: إيجار مبنى المركز"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="expenseAmount" className="block text-sm font-medium text-gray-700 mb-1">
+              المبلغ (د.ل):
+            </label>
+            <input
+              type="number"
+              id="expenseAmount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 1500.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="expenseCategory" className="block text-sm font-medium text-gray-700 mb-1">
+              الفئة:
+            </label>
+            <select
+              id="expenseCategory"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">اختر فئة</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="expenseDate" className="block text-sm font-medium text-gray-700 mb-1">
+              التاريخ:
+            </label>
+            <input
+              type="date"
+              id="expenseDate"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إضافة المصروف
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditExpenseModal component: Modal for editing existing expense records.
+const EditExpenseModal = ({ expense, onClose, onUpdateExpense }) => {
+  // Initialize state with current expense data, converting Timestamp to date string
+  const [description, setDescription] = useState(expense.description);
+  const [amount, setAmount] = useState(expense.amount);
+  const [category, setCategory] = useState(expense.category);
+  const [date, setDate] = useState(expense.date.toDate().toISOString().split('T')[0]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (description && amount && !isNaN(parseFloat(amount))) { // Validate required fields and amount
+      await onUpdateExpense(expense.id, {
+        description,
+        amount: parseFloat(amount),
+        category,
+        date: new Date(date), // Convert date string back to Date object
+      });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الوصف والمبلغ).'); // Error message
+    }
+  };
+
+  const categories = ['رواتب', 'إيجار', 'كهرباء/ماء', 'صيانة', 'لوازم', 'تسويق', 'عام']; // Predefined expense categories
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل المصروف</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editExpenseDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              الوصف:
+            </label>
+            <input
+              type="text"
+              id="editExpenseDescription"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: إيجار مبنى المركز"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editExpenseAmount" className="block text-sm font-medium text-gray-700 mb-1">
+              المبلغ (د.ل):
+            </label>
+            <input
+              type="number"
+              id="editExpenseAmount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 1500.00"
+              step="0.01"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editExpenseCategory" className="block text-sm font-medium text-gray-700 mb-1">
+              الفئة:
+            </label>
+            <select
+              id="editExpenseCategory"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">اختر فئة</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="editExpenseDate" className="block text-sm font-medium text-gray-700 mb-1">
+              التاريخ:
+            </label>
+            <input
+              type="date"
+              id="editExpenseDate"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// AddInstructorModal component: Modal for adding new instructor records.
+const AddInstructorModal = ({ onClose, onAddInstructor, courses }) => {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [courseRates, setCourseRates] = useState({}); // State to hold rates for each course
+
+  // Handler for changing an instructor's rate for a specific course
+  const handleRateChange = (courseId, rate) => {
+    setCourseRates(prev => ({
+      ...prev,
+      [courseId]: parseFloat(rate) || 0 // Store as number, default to 0 if invalid
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && phone) { // Validate required fields
+      await onAddInstructor({ name, phone, email, specialty, courseRates });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الاسم ورقم الهاتف).'); // Error message
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">إضافة مدرب جديد</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="instructorName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم المدرب الكامل:
+            </label>
+            <input
+              type="text"
+              id="instructorName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم المدرب"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="instructorPhone" className="block text-sm font-medium text-gray-700 mb-1">
+              رقم الهاتف:
+            </label>
+            <input
+              type="tel"
+              id="instructorPhone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 0911234567"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="instructorEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              البريد الإلكتروني (اختياري):
+            </label>
+            <input
+              type="email"
+              id="instructorEmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل البريد الإلكتروني"
+            />
+          </div>
+          <div>
+            <label htmlFor="instructorSpecialty" className="block text-sm font-medium text-gray-700 mb-1">
+              التخصص (اختياري):
+            </label>
+            <input
+              type="text"
+              id="instructorSpecialty"
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: لغة إنجليزية"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              أجور الدورات (لكل طالب في الدورة) (اختياري):
+            </label>
+            {courses.length === 0 ? (
+              <p className="text-sm text-gray-500">لا توجد دورات لإعداد أجور لها.</p>
+            ) : (
+              courses.map(course => (
+                <div key={course.id} className="flex items-center mb-2">
+                  <label htmlFor={`rate-${course.id}`} className="block text-sm font-medium text-gray-700 w-1/2">
+                    {course.name}:
+                  </label>
+                  <input
+                    type="number"
+                    id={`rate-${course.id}`}
+                    value={courseRates[course.id] || ''}
+                    onChange={(e) => handleRateChange(course.id, e.target.value)}
+                    className="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="أجر الطالب"
+                    step="0.01"
+                  />
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إضافة المدرب
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// EditInstructorModal component: Modal for editing existing instructor records.
+const EditInstructorModal = ({ instructor, onClose, onUpdateInstructor, courses }) => {
+  // Initialize state with current instructor data
+  const [name, setName] = useState(instructor.name);
+  const [phone, setPhone] = useState(instructor.phone);
+  const [email, setEmail] = useState(instructor.email);
+  const [specialty, setSpecialty] = useState(instructor.specialty);
+  const [courseRates, setCourseRates] = useState(instructor.courseRates || {}); // Initialize with existing rates
+
+  // Handler for changing an instructor's rate for a specific course
+  const handleRateChange = (courseId, rate) => {
+    setCourseRates(prev => ({
+      ...prev,
+      [courseId]: parseFloat(rate) || 0
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (name && phone) { // Validate required fields
+      await onUpdateInstructor(instructor.id, { name, phone, email, specialty, courseRates });
+      onClose(); // Close modal on success
+    } else {
+      console.error('الرجاء تعبئة الحقول المطلوبة (الاسم ورقم الهاتف).'); // Error message
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h3 className="text-2xl font-semibold mb-6 text-gray-800">تعديل بيانات المدرب</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="editInstructorName" className="block text-sm font-medium text-gray-700 mb-1">
+              اسم المدرب الكامل:
+            </label>
+            <input
+              type="text"
+              id="editInstructorName"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل اسم المدرب"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editInstructorPhone" className="block text-sm font-medium text-gray-700 mb-1">
+              رقم الهاتف:
+            </label>
+            <input
+              type="tel"
+              id="editInstructorPhone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="مثال: 0911234567"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="editInstructorEmail" className="block text-sm font-medium text-gray-700 mb-1">
+              البريد الإلكتروني (اختياري):
+            </label>
+            <input
+              type="email"
+              id="editInstructorEmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="أدخل البريد الإلكتروني"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              أجور الدورات (لكل طالب في الدورة) (اختياري):
+            </label>
+            {courses.length === 0 ? (
+              <p className="text-sm text-gray-500">لا توجد دورات لإعداد أجور لها.</p>
+            ) : (
+              courses.map(course => (
+                <div key={course.id} className="flex items-center mb-2">
+                  <label htmlFor={`edit-rate-${course.id}`} className="block text-sm font-medium text-gray-700 w-1/2">
+                    {course.name}:
+                  </label>
+                  <input
+                    type="number"
+                    id={`edit-rate-${course.id}`}
+                    value={courseRates[course.id] || ''}
+                    onChange={(e) => handleRateChange(course.id, e.target.value)}
+                    className="mt-1 block w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="أجر الطالب"
+                    step="0.01"
+                  />
+                </div>
+              ))
+            )}
+          </div>
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+
+// PaymentsPage component: Manages payment records.
+const PaymentsPage = ({ payments, addPayment, updatePayment, deletePayment, students, courses }) => {
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false);
+  const [currentPayment, setCurrentPayment] = useState(null);
+
+  // Helper function to format Firestore Timestamp dates for display
+  const formatDate = (timestamp) => {
+    if (!timestamp) return '';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Helper function to get student name from ID
+  const getStudentName = (studentId) => {
+    const student = students.find(s => s.id === studentId);
+    return student ? student.name : 'طالب غير معروف';
+  };
+
+  // Helper function to get course name from ID
+  const getCourseName = (courseId) => {
+    const course = courses.find(c => c.id === courseId);
+    return course ? course.name : 'لا توجد دورة محددة';
+  };
+
+  const handleEditClick = (payment) => {
+    setCurrentPayment(payment);
+    setShowEditPaymentModal(true);
+  };
+
+  const handleDeleteClick = (paymentId) => {
+    if (window.confirm("هل أنت متأكد أنك تريد حذف هذه الدفعة؟")) {
+      deletePayment(paymentId);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold text-gray-700">إدارة المدفوعات</h2>
+        <button
+          onClick={() => setShowAddPaymentModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+        >
+          + إضافة دفعة جديدة
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الطالب
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الدورة
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                المبلغ
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الخصم
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                التاريخ
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الحالة
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ملاحظات
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                الإجراءات
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {payments.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                  لا يوجد دفعات مسجلة بعد.
+                </td>
+              </tr>
+            ) : (
+              payments.map((payment) => (
+                <tr key={payment.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {getStudentName(payment.studentId)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {getCourseName(payment.courseId)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.amount.toLocaleString()} د.ل
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.discount.toLocaleString()} د.ل
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(payment.date)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        payment.status === 'مدفوع' ? 'bg-green-100 text-green-800' :
+                        payment.status === 'معلق' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {payment.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {payment.notes || 'لا يوجد'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEditClick(payment)}
+                      className="text-blue-600 hover:text-blue-900 ml-4"
+                    >
+                      تعديل
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(payment.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      حذف
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showAddPaymentModal && (
+        <AddPaymentModal onClose={() => setShowAddPaymentModal(false)} onAddPayment={addPayment} students={students} courses={courses} />
+      )}
+
+      {showEditPaymentModal && currentPayment && (
+        <EditPaymentModal
+          payment={currentPayment}
+          onClose={() => setShowEditPaymentModal(false)}
+          onUpdatePayment={updatePayment}
+          students={students}
+          courses={courses}
+        />
+      )}
+    </div>
+  );
+};
+
+// ReportsPage component: Displays various reports and charts.
+const ReportsPage = ({ students, classes, expenses, courses, payments }) => {
+  const [selectedClassIds, setSelectedClassIds] = useState([]); // State for selected classes for CSV export
+
+  // Financial Overview calculations
+  const totalRevenue = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const netIncome = totalRevenue - totalExpenses;
+
+  // Student Status data for Pie Chart
+  const paidStudentsCount = students.filter(s => s.paid).length;
+  const unpaidStudentsCount = students.length - paidStudentsCount;
+  const studentStatusData = [
+    { name: 'طلاب مدفوعة', value: paidStudentsCount, color: '#4CAF50' },
+    { name: 'طلاب غير مدفوعة', value: unpaidStudentsCount, color: '#F44336' },
+  ];
+
+  // Class Enrollment data for Bar Chart
+  const classEnrollmentData = classes.map(cls => ({
+    name: cls.name,
+    students: cls.students ? cls.students.length : 0
+  }));
+
+  // Expenses by Category data for Pie Chart
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    const category = expense.category || 'غير مصنف';
+    acc[category] = (acc[category] || 0) + expense.amount;
+    return acc;
+  }, {});
+  const expensesByCategoryData = Object.entries(expensesByCategory).map(([name, value]) => ({ name, value }));
+
+  // Revenue by Course data for Bar Chart
+  const revenueByCourse = payments.reduce((acc, payment) => {
+    if (payment.courseId) {
+      const course = courses.find(c => c.id === payment.courseId);
+      if (course) {
+        acc[course.name] = (acc[course.name] || 0) + payment.amount;
+      }
+    }
+    return acc;
+  }, {});
+  const revenueByCourseData = Object.entries(revenueByCourse).map(([name, value]) => ({ name, value }));
+
+  // Colors for charts
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+  // Handler for class selection checkboxes for CSV export
+  const handleClassSelectionChange = (e) => {
+    const { value, checked } = e.target;
+    setSelectedClassIds(prev =>
+      checked ? [...prev, value] : prev.filter(id => id !== value)
+    );
+  };
+
+  // Handler for exporting student data by selected classes to CSV
+  const handleExportStudentsByClass = () => {
+    if (selectedClassIds.length === 0) {
+      alert("الرجاء اختيار فصل واحد على الأقل لتصدير بيانات الطلاب.");
+      return;
+    }
+
+    const exportedStudents = new Set(); // Use a Set to track unique student IDs to avoid duplicates
+    const dataToExport = [];
+
+    selectedClassIds.forEach(classId => {
+      const selectedClass = classes.find(cls => cls.id === classId);
+      if (selectedClass && selectedClass.students) {
+        selectedClass.students.forEach(studentId => {
+          if (!exportedStudents.has(studentId)) { // Only add student if not already added
+            const student = students.find(s => s.id === studentId);
+            if (student) {
+              dataToExport.push({
+                'اسم الطالب': student.name,
+                'رقم الهاتف': student.phone,
+                'البريد الإلكتروني': student.email || '',
+                'حالة الدفع': student.paid ? 'مدفوع' : 'غير مدفوع',
+                'الفصل': selectedClass.name // Include class name for context
+              });
+              exportedStudents.add(studentId);
+            }
+          }
+        });
+      }
+    });
+
+    if (dataToExport.length > 0) {
+      exportToCsv('student_data_by_class.csv', dataToExport); // Call the CSV export helper
+    } else {
+      alert("لا يوجد طلاب في الفصول المختارة لتصدير بياناتهم.");
+    }
+  };
+
+
+  return (
+    <div className="space-y-8">
+      <h2 className="text-3xl font-semibold text-gray-700 mb-6">التقارير الشاملة</h2>
+
+      {/* Financial Overview Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">نظرة عامة مالية</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-lg text-gray-600">إجمالي الإيرادات</p>
+            <p className="text-3xl font-bold text-blue-800">{totalRevenue.toLocaleString()} د.ل</p>
+          </div>
+          <div className="p-4 bg-red-50 rounded-lg">
+            <p className="text-lg text-gray-600">إجمالي المصاريف</p>
+            <p className="text-3xl font-bold text-red-800">{totalExpenses.toLocaleString()} د.ل</p>
+          </div>
+          <div className="p-4 bg-green-50 rounded-lg">
+            <p className="text-lg text-gray-600">صافي الدخل</p>
+            <p className={`text-3xl font-bold ${netIncome >= 0 ? 'text-green-800' : 'text-red-800'}`}>
+              {netIncome.toLocaleString()} د.ل
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Student Status Chart Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">حالة دفع الطلاب</h3>
+        {students.length === 0 ? (
+          <p className="text-center text-gray-500">لا توجد بيانات طلاب لعرضها.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={studentStatusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              >
+                {studentStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Class Enrollment Chart Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">عدد الطلاب في الفصول</h3>
+        {classEnrollmentData.length === 0 ? (
+          <p className="text-center text-gray-500">لا توجد بيانات فصول لعرضها.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={classEnrollmentData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="students" fill="#8884d8" name="عدد الطلاب" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Export Students by Class Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">تصدير بيانات الطلاب حسب الفصل</h3>
+        {classes.length === 0 ? (
+          <p className="text-center text-gray-500">لا توجد فصول لإدارة تصدير الطلاب.</p>
+        ) : (
+          <>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                اختر الفصول لتصدير بيانات طلابها:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-40 overflow-y-auto border border-gray-300 p-3 rounded-md">
+                {classes.map(cls => (
+                  <div key={cls.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`class-${cls.id}`}
+                      value={cls.id}
+                      checked={selectedClassIds.includes(cls.id)}
+                      onChange={handleClassSelectionChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`class-${cls.id}`} className="ml-2 text-sm text-gray-700">
+                      {cls.name} ({cls.students ? cls.students.length : 0} طلاب)
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={handleExportStudentsByClass}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              تصدير الطلاب في الفصول المختارة (CSV)
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Expenses by Category Chart Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">المصاريف حسب الفئة</h3>
+        {expensesByCategoryData.length === 0 ? (
+          <p className="text-center text-gray-500">لا توجد بيانات مصاريف لعرضها.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={expensesByCategoryData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+              >
+                {expensesByCategoryData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `${value.toLocaleString()} د.ل`} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Revenue by Course Chart Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">الإيرادات حسب الدورة</h3>
+        {revenueByCourseData.length === 0 ? (
+          <p className="text-center text-gray-500">لا توجد بيانات إيرادات للدورات لعرضها.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={revenueByCourseData}
+              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis formatter={(value) => `${value.toLocaleString()} د.ل`} />
+              <Tooltip formatter={(value) => `${value.toLocaleString()} د.ل`} />
+              <Legend />
+              <Bar dataKey="value" fill="#00C49F" name="الإيرادات" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Future Reports Placeholder Section */}
+      <div className="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">
+        <h3 className="text-2xl font-semibold text-gray-700 mb-4">تقارير إضافية قريباً...</h3>
+        <p>مثل: تقارير حضور الطلاب، تقارير أداء المدربين، تقارير الدفعات المتأخرة.</p>
+      </div>
+    </div>
+  );
+};
+
+
+// AttendancePage component: Manages student attendance records.
+const AttendancePage = ({ students, classes, instructors, addAttendance, attendances }) => {
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedInstructorId, setSelectedInstructorId] = useState('');
+  // Default date to today's date in YYYY-MM-DD format
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [classStudents, setClassStudents] = useState([]); // Students belonging to the selected class
+  const [attendanceStatuses, setAttendanceStatuses] = useState({}); // { studentId: status } for current selection
+
+  // Effect to update classStudents and attendanceStatuses when class, students, date, or attendances change
+  useEffect(() => {
+    if (selectedClassId) {
+      const currentClass = classes.find(cls => cls.id === selectedClassId);
+      if (currentClass && currentClass.students) {
+        // Filter students to only include those assigned to the selected class
+        const studentsInClass = students.filter(s => currentClass.students.includes(s.id));
+        setClassStudents(studentsInClass);
+
+        // Load existing attendance for the selected class and date
+        const existingAttendanceMap = {};
+        attendances.forEach(att => {
+          // Convert Firestore Timestamp to YYYY-MM-DD string for accurate comparison
+          const attDate = att.date.toDate().toISOString().split('T')[0];
+          if (att.classId === selectedClassId && attDate === selectedDate) {
+            existingAttendanceMap[att.studentId] = att.status;
+          }
+        });
+        setAttendanceStatuses(existingAttendanceMap);
+      } else {
+        // Reset if no class or students found
+        setClassStudents([]);
+        setAttendanceStatuses({});
+      }
+    } else {
+      // Reset if no class is selected
+      setClassStudents([]);
+      setAttendanceStatuses({});
+    }
+  }, [selectedClassId, students, classes, selectedDate, attendances]); // Dependencies for this effect
+
+  // Handler for updating a student's attendance status
+  const handleAttendanceChange = (studentId, status) => {
+    setAttendanceStatuses(prev => ({
+      ...prev,
+      [studentId]: status
+    }));
+  };
+
+  // Handler for submitting attendance records
+  const handleSubmitAttendance = async () => {
+    if (!selectedClassId || !selectedInstructorId || !selectedDate) {
+      alert("الرجاء اختيار الفصل، المدرب، والتاريخ أولاً.");
+      return;
+    }
+
+    if (Object.keys(attendanceStatuses).length === 0) {
+      alert("الرجاء تسجيل حضور الطلاب قبل الحفظ.");
+      return;
+    }
+
+    const attendanceRecordsToSave = [];
+    for (const studentId in attendanceStatuses) {
+      attendanceRecordsToSave.push({
+        studentId,
+        classId: selectedClassId,
+        instructorId: selectedInstructorId,
+        date: new Date(selectedDate), // Ensure date is a Date object
+        status: attendanceStatuses[studentId],
+      });
+    }
+
+    try {
+      // Use Promise.all to concurrently add/update all attendance records
+      // The `addAttendance` function uses `setDoc` with `merge: true` to handle upsert logic
+      await Promise.all(attendanceRecordsToSave.map(record => addAttendance(record)));
+
+      alert("تم حفظ سجل الحضور بنجاح!");
+      // Optionally, you might want to reset the form or provide further feedback
+      // For example, clear selectedClassId and selectedInstructorId to start fresh
+      // setSelectedClassId('');
+      // setSelectedInstructorId('');
+      // setAttendanceStatuses({});
+    } catch (error) {
+      console.error("Error saving attendance:", error);
+      alert("حدث خطأ أثناء حفظ سجل الحضور.");
+    }
+  };
+
+  // Helper function to get instructor name (though not used in rendering table, useful for debugging/future)
+  const getInstructorName = (id) => {
+    const instructor = instructors.find(inst => inst.id === id);
+    return instructor ? instructor.name : 'غير معروف';
+  };
+
+  // Helper function to get instructors assigned to the selected class
+  const getClassInstructors = (classId) => {
+    const cls = classes.find(c => c.id === classId);
+    if (!cls || !cls.instructors) return [];
+    return instructors.filter(inst => cls.instructors.includes(inst.id));
+  };
+
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-700">إدارة الحضور والغياب</h2>
+
+      <div className="bg-white p-6 rounded-lg shadow-md flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[200px]">
+          <label htmlFor="classSelect" className="block text-sm font-medium text-gray-700 mb-1">
+            اختر الفصل:
+          </label>
+          <select
+            id="classSelect"
+            value={selectedClassId}
+            onChange={(e) => {
+              setSelectedClassId(e.target.value);
+              setSelectedInstructorId(''); // Reset instructor when class changes
+            }}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="">اختر فصل...</option>
+            {classes.map(cls => (
+              <option key={cls.id} value={cls.id}>{cls.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex-1 min-w-[200px]">
+          <label htmlFor="instructorSelect" className="block text-sm font-medium text-gray-700 mb-1">
+            اختر المدرب:
+          </label>
+          <select
+            id="instructorSelect"
+            value={selectedInstructorId}
+            onChange={(e) => setSelectedInstructorId(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            // Disable instructor selection if no class is chosen or no instructors are assigned to the class
+            disabled={!selectedClassId || getClassInstructors(selectedClassId).length === 0}
+          >
+            <option value="">اختر مدرباً...</option>
+            {selectedClassId && getClassInstructors(selectedClassId).map(inst => (
+              <option key={inst.id} value={inst.id}>{inst.name}</option>
+            ))}
+          </select>
+          {selectedClassId && getClassInstructors(selectedClassId).length === 0 && (
+            <p className="text-red-500 text-xs mt-1">لا يوجد مدربون منسوبون لهذا الفصل.</p>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-[200px]">
+          <label htmlFor="attendanceDate" className="block text-sm font-medium text-gray-700 mb-1">
+            التاريخ:
+          </label>
+          <input
+            type="date"
+            id="attendanceDate"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Display student attendance table if class and instructor are selected and students exist */}
+      {selectedClassId && selectedInstructorId && classStudents.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  اسم الطالب
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  الحالة
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {classStudents.map(student => (
+                <tr key={student.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {student.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center space-x-4">
+                      {/* Radio buttons for attendance status */}
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name={`attendance-${student.id}`} // Unique name for each student's radio group
+                          value="present"
+                          checked={attendanceStatuses[student.id] === 'present'}
+                          onChange={() => handleAttendanceChange(student.id, 'present')}
+                          className="form-radio text-green-600 h-4 w-4"
+                        />
+                        <span className="ml-2 text-green-700">حاضر</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name={`attendance-${student.id}`}
+                          value="absent"
+                          checked={attendanceStatuses[student.id] === 'absent'}
+                          onChange={() => handleAttendanceChange(student.id, 'absent')}
+                          className="form-radio text-red-600 h-4 w-4"
+                        />
+                        <span className="ml-2 text-red-700">غائب</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name={`attendance-${student.id}`}
+                          value="late"
+                          checked={attendanceStatuses[student.id] === 'late'}
+                          onChange={() => handleAttendanceChange(student.id, 'late')}
+                          className="form-radio text-yellow-600 h-4 w-4"
+                        />
+                        <span className="ml-2 text-yellow-700">متأخر</span>
+                      </label>
+                      <label className="inline-flex items-center">
+                        <input
+                          type="radio"
+                          name={`attendance-${student.id}`}
+                          value="excused"
+                          checked={attendanceStatuses[student.id] === 'excused'}
+                          onChange={() => handleAttendanceChange(student.id, 'excused')}
+                          className="form-radio text-gray-600 h-4 w-4"
+                        />
+                        <span className="ml-2 text-gray-700">بعذر</span>
+                      </label>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="p-4 bg-gray-50 flex justify-end">
+            <button
+              onClick={handleSubmitAttendance}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+              حفظ الحضور
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Messages for user guidance */}
+      {selectedClassId && selectedInstructorId && classStudents.length === 0 && (
+        <div className="text-center text-gray-500 p-6 bg-white rounded-lg shadow-md">
+          <p>لا يوجد طلاب منسوبون لهذا الفصل.</p>
+        </div>
+      )}
+
+      {!selectedClassId || !selectedInstructorId ? (
+        <div className="text-center text-gray-500 p-6 bg-white rounded-lg shadow-md">
+          <p>الرجاء اختيار **الفصل** و**المدرب** لعرض قائمة الطلاب وتسجيل الحضور.</p>
+        </div>
+      ) : null}
+
+    </div>
+  );
+};
+
+
+// PlaceholderPage component: A generic component for pages that are not yet implemented.
+const PlaceholderPage = ({ title }) => (
+  <div className="text-center text-gray-600 text-2xl p-10">
+    صفحة {title} (قريباً...)
+  </div>
+);
+
+// ==================================================================================================
+// --- MAIN APP COMPONENT ---
+// ==================================================================================================
+
+const App = () => {
+  // State variables for active section, user details, and all data collections
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [userId, setUserId] = useState(null);
+  const [userRole, setUserRole] = useState('admin'); // User role state: 'admin' or 'supervisor'
+  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [instructors, setInstructors] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [attendances, setAttendances] = useState([]); // State for attendance records
+  const [db, setDb] = useState(null); // Firestore instance
+  const [auth, setAuth] = useState(null); // Firebase Auth instance
+  const [isAuthReady, setIsAuthReady] = useState(false); // Flag to indicate Firebase auth is ready
+
+  // useEffect for Firebase initialization and authentication state listener
+  useEffect(() => {
+    try {
+      // Retrieve Firebase config and app ID from global variables (provided by Canvas environment)
+      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      // Initialize Firebase app, Firestore, and Auth
+      const app = initializeApp(firebaseConfig);
+      const firestore = getFirestore(app);
+      const firebaseAuth = getAuth(app);
+
+      setDb(firestore);
+      setAuth(firebaseAuth);
+
+      // Async function to sign in and set up auth state listener
+      const signInAndListen = async () => {
+        if (typeof __initial_auth_token !== 'undefined') {
+          // Sign in with custom token if provided (for authenticated sessions)
+          await signInWithCustomToken(firebaseAuth, __initial_auth_token);
+        } else {
+          // Sign in anonymously if no custom token (for basic access)
+          await signInAnonymously(firebaseAuth);
+        }
+
+        // Set up auth state change listener
+        const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (user) => {
+          if (user) {
+            setUserId(user.uid);
+            // In a real application, user roles would be fetched from a dedicated 'users' collection
+            // For this simulation, the role is managed by the `userRole` state and its switcher.
+          } else {
+            setUserId(crypto.randomUUID()); // Assign a random ID for anonymous users
+            setUserRole('admin'); // Default anonymous users to 'admin' role for full access by default
+          }
+          setIsAuthReady(true); // Mark auth as ready
+        });
+        return unsubscribeAuth; // Return unsubscribe function
+      };
+
+      let unsubscribeAuthPromise = signInAndListen(); // Call the async sign-in function
+
+      // Cleanup function for useEffect: unsubscribe from auth listener
+      return () => {
+        unsubscribeAuthPromise.then(unsubscribe => {
+          if (unsubscribe) {
+            unsubscribe();
+          }
+        });
+      };
+    } catch (error) {
+      console.error("Error initializing Firebase:", error);
+    }
+  }, []); // Empty dependency array means this effect runs once on mount
+
+  // Generic useEffect hook for fetching data from Firestore collections
+  // This pattern is repeated for students, classes, expenses, courses, instructors, payments, and attendances.
+  const setupCollectionListener = (collectionName, setStateFunction) => {
+    useEffect(() => {
+      if (db && isAuthReady) {
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const collectionRef = collection(db, `artifacts/${appId}/public/data/${collectionName}`);
+        const unsubscribe = onSnapshot(collectionRef, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setStateFunction(data);
+        }, (error) => {
+          console.error(`Error fetching ${collectionName}:`, error);
+        });
+        return () => unsubscribe(); // Cleanup listener on unmount or dependency change
+      }
+    }, [db, isAuthReady, collectionName, setStateFunction]); // Dependencies for this effect
+  };
+
+  // Call the generic listener setup for each collection
+  setupCollectionListener('students', setStudents);
+  setupCollectionListener('classes', setClasses);
+  setupCollectionListener('expenses', setExpenses);
+  setupCollectionListener('courses', setCourses);
+  setupCollectionListener('instructors', setInstructors);
+  setupCollectionListener('payments', setPayments);
+  setupCollectionListener('attendance', setAttendances); // New listener for attendance data
+
+
+  // Firestore operations for Students
+  const addStudent = async (newStudent) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const studentsCollectionRef = collection(db, `artifacts/${appId}/public/data/students`);
+      await addDoc(studentsCollectionRef, { ...newStudent, createdAt: Timestamp.now() }); // Use Timestamp for createdAt
+      console.log("Student added successfully!");
+    } catch (e) { console.error("Error adding document: ", e); }
+  };
+
+  const updateStudent = async (studentId, updatedData) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+      await updateDoc(studentDocRef, updatedData);
+      console.log("Student updated successfully!");
+    } catch (e) { console.error("Error updating document: ", e); }
+  };
+
+  const deleteStudent = async (studentId) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const studentDocRef = doc(db, `artifacts/${appId}/public/data/students`, studentId);
+      await deleteDoc(studentDocRef);
+      console.log("Student deleted successfully!");
+    } catch (e) { console.error("Error deleting document: ", e); }
+  };
+
+  // Firestore operations for Classes
+  const addClass = async (newClass) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const classesCollectionRef = collection(db, `artifacts/${appId}/public/data/classes`);
+      await addDoc(classesCollectionRef, { ...newClass, students: [], instructors: [], createdAt: Timestamp.now() });
+      console.log("Class added successfully!");
+    } catch (e) { console.error("Error adding class: ", e); }
+  };
+
+  const updateClass = async (classId, updatedData) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const classDocRef = doc(db, `artifacts/${appId}/public/data/classes`, classId);
+      await updateDoc(classDocRef, updatedData);
+      console.log("Class updated successfully!");
+    } catch (e) { console.error("Error updating class: ", e); }
+  };
+
+  const deleteClass = async (classId) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const classDocRef = doc(db, `artifacts/${appId}/public/data/classes`, classId);
+      await deleteDoc(classDocRef);
+      console.log("Class deleted successfully!");
+    } catch (e) { console.error("Error deleting class: ", e); }
+  };
+
+  // Firestore operations for Expenses
+  const addExpense = async (newExpense) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const expensesCollectionRef = collection(db, `artifacts/${appId}/public/data/expenses`);
+      // Convert date to Firestore Timestamp before saving
+      await addDoc(expensesCollectionRef, { ...newExpense, date: Timestamp.fromDate(newExpense.date), createdAt: Timestamp.now() });
+      console.log("Expense added successfully!");
+    } catch (e) { console.error("Error adding expense: ", e); }
+  };
+
+  const updateExpense = async (expenseId, updatedData) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const expenseDocRef = doc(db, `artifacts/${appId}/public/data/expenses`, expenseId);
+      // Convert date to Firestore Timestamp before saving
+      await updateDoc(expenseDocRef, { ...updatedData, date: Timestamp.fromDate(updatedData.date) });
+      console.log("Expense updated successfully!");
+    } catch (e) { console.error("Error updating expense: ", e); }
+  };
+
+  const deleteExpense = async (expenseId) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const expenseDocRef = doc(db, `artifacts/${appId}/public/data/expenses`, expenseId);
+      await deleteDoc(expenseDocRef);
+      console.log("Expense deleted successfully!");
+    } catch (e) { console.error("Error deleting expense: ", e); }
+  };
+
+  // Firestore operations for Courses
+  const addCourse = async (newCourse) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const coursesCollectionRef = collection(db, `artifacts/${appId}/public/data/courses`);
+      await addDoc(coursesCollectionRef, { ...newCourse, createdAt: Timestamp.now() });
+      console.log("Course added successfully!");
+    } catch (e) { console.error("Error adding course: ", e); }
+  };
+
+  const updateCourse = async (courseId, updatedData) => {
+    if (!db) { console.error("Firestore DB not initialized."); return; }
+    try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const courseDocRef = doc(db, `artifacts/${appId}/public/data/courses`, courseId);
+      await updateDoc(courseDocRef, updatedData);
+      console.log("Course updated successfully!");
+  
